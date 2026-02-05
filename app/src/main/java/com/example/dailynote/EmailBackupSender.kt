@@ -1,7 +1,15 @@
 package com.example.dailynote
 
 import android.content.Context
+<<<<<<< codex/add-local-backup-with-versioning-9izg0e
+import android.content.ContentValues
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+=======
+import android.os.Environment
+>>>>>>> main
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -59,6 +67,11 @@ class EmailBackupSender(private val context: Context) {
         dbFile.copyTo(localBackupFile, overwrite = true)
         trimOldBackups(localBackupDir)
 
+<<<<<<< codex/add-local-backup-with-versioning-9izg0e
+        runCatching {
+            savePublicBackup(backupName, dbFile)
+            trimOldPublicBackups()
+=======
         val externalBackupRoot = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         if (externalBackupRoot != null) {
             val externalBackupDir = File(externalBackupRoot, BACKUP_DIR_NAME).apply { mkdirs() }
@@ -67,6 +80,7 @@ class EmailBackupSender(private val context: Context) {
                 dbFile.copyTo(externalBackupFile, overwrite = true)
                 trimOldBackups(externalBackupDir)
             }
+>>>>>>> main
         }
 
         return localBackupFile
@@ -82,6 +96,79 @@ class EmailBackupSender(private val context: Context) {
         backups.drop(MAX_BACKUP_FILES).forEach { it.delete() }
     }
 
+<<<<<<< codex/add-local-backup-with-versioning-9izg0e
+    private fun savePublicBackup(backupName: String, dbFile: File) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, backupName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME")
+            }
+
+            val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), values) ?: return
+            context.contentResolver.openOutputStream(uri)?.use { output ->
+                dbFile.inputStream().use { input ->
+                    input.copyTo(output)
+                }
+            } ?: context.contentResolver.delete(uri, null, null)
+            return
+        }
+
+        val publicBackupDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+            PUBLIC_BACKUP_DIR_NAME
+        ).apply { mkdirs() }
+
+        val publicBackupFile = File(publicBackupDir, backupName)
+        dbFile.copyTo(publicBackupFile, overwrite = true)
+    }
+
+    private fun trimOldPublicBackups() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val projection = arrayOf(
+                MediaStore.MediaColumns._ID,
+                MediaStore.MediaColumns.DATE_MODIFIED,
+                MediaStore.MediaColumns.RELATIVE_PATH
+            )
+            val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} = ?"
+            val selectionArgs = arrayOf("${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME/")
+
+            val backupUris = mutableListOf<Pair<Uri, Long>>()
+            context.contentResolver.query(
+                MediaStore.Files.getContentUri("external"),
+                projection,
+                selection,
+                selectionArgs,
+                null
+            )?.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+                val dateModifiedIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED)
+
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(idIndex)
+                    val dateModified = cursor.getLong(dateModifiedIndex)
+                    val uri = Uri.withAppendedPath(MediaStore.Files.getContentUri("external"), id.toString())
+                    backupUris += uri to dateModified
+                }
+            }
+
+            if (backupUris.size <= MAX_BACKUP_FILES) return
+            backupUris
+                .sortedByDescending { it.second }
+                .drop(MAX_BACKUP_FILES)
+                .forEach { (uri, _) -> context.contentResolver.delete(uri, null, null) }
+            return
+        }
+
+        val publicBackupDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+            PUBLIC_BACKUP_DIR_NAME
+        )
+        trimOldBackups(publicBackupDir)
+    }
+
+=======
+>>>>>>> main
     private fun buildContent(dbFile: File): MimeMultipart {
         val textPart = MimeBodyPart().apply {
             setText("这是每日记事应用自动备份的 SQLite 数据库文件。")
@@ -99,7 +186,12 @@ class EmailBackupSender(private val context: Context) {
     }
 
     companion object {
+<<<<<<< codex/add-local-backup-with-versioning-9izg0e
+        private const val BACKUP_DIR_NAME = "backups"
+        private const val PUBLIC_BACKUP_DIR_NAME = "DailyNoteBackups"
+=======
         private const val BACKUP_DIR_NAME = "dailynote-backups"
+>>>>>>> main
         private const val MAX_BACKUP_FILES = 5
     }
 }
