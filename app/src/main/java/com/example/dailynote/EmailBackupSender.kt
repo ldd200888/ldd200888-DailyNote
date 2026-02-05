@@ -1,6 +1,7 @@
 package com.example.dailynote
 
 import android.content.Context
+import android.os.Environment
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -23,6 +24,8 @@ class EmailBackupSender(private val context: Context) {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
         if (!dbFile.exists()) return
 
+        val backupFile = createBackupCopy(dbFile)
+
         val props = Properties().apply {
             put("mail.smtp.auth", "true")
             put("mail.smtp.host", config.smtpHost)
@@ -41,10 +44,42 @@ class EmailBackupSender(private val context: Context) {
             setRecipients(Message.RecipientType.TO, InternetAddress.parse(config.recipientEmail))
             val dateText = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
             subject = "每日记事 SQLite 备份 - $dateText"
-            setContent(buildContent(dbFile), "multipart/mixed")
+            setContent(buildContent(backupFile), "multipart/mixed")
         }
 
         Transport.send(message)
+    }
+
+    private fun createBackupCopy(dbFile: File): File {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val backupName = "${dbFile.nameWithoutExtension}_$timestamp.db"
+
+        val localBackupDir = File(context.filesDir, BACKUP_DIR_NAME).apply { mkdirs() }
+        val localBackupFile = File(localBackupDir, backupName)
+        dbFile.copyTo(localBackupFile, overwrite = true)
+        trimOldBackups(localBackupDir)
+
+        val externalBackupRoot = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+        if (externalBackupRoot != null) {
+            val externalBackupDir = File(externalBackupRoot, BACKUP_DIR_NAME).apply { mkdirs() }
+            runCatching {
+                val externalBackupFile = File(externalBackupDir, backupName)
+                dbFile.copyTo(externalBackupFile, overwrite = true)
+                trimOldBackups(externalBackupDir)
+            }
+        }
+
+        return localBackupFile
+    }
+
+    private fun trimOldBackups(backupDir: File) {
+        val backups = backupDir.listFiles { file ->
+            file.isFile && file.extension.equals("db", ignoreCase = true)
+        }?.sortedByDescending { it.lastModified() } ?: return
+
+        if (backups.size <= MAX_BACKUP_FILES) return
+
+        backups.drop(MAX_BACKUP_FILES).forEach { it.delete() }
     }
 
     private fun buildContent(dbFile: File): MimeMultipart {
@@ -61,5 +96,10 @@ class EmailBackupSender(private val context: Context) {
             addBodyPart(textPart)
             addBodyPart(attachmentPart)
         }
+    }
+
+    companion object {
+        private const val BACKUP_DIR_NAME = "backups"
+        private const val MAX_BACKUP_FILES = 5
     }
 }
