@@ -1,15 +1,11 @@
 package com.example.dailynote
 
-import android.content.Context
-<<<<<<< codex/add-local-backup-with-versioning-9izg0e
 import android.content.ContentValues
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-=======
-import android.os.Environment
->>>>>>> main
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -67,20 +63,9 @@ class EmailBackupSender(private val context: Context) {
         dbFile.copyTo(localBackupFile, overwrite = true)
         trimOldBackups(localBackupDir)
 
-<<<<<<< codex/add-local-backup-with-versioning-9izg0e
         runCatching {
             savePublicBackup(backupName, dbFile)
             trimOldPublicBackups()
-=======
-        val externalBackupRoot = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        if (externalBackupRoot != null) {
-            val externalBackupDir = File(externalBackupRoot, BACKUP_DIR_NAME).apply { mkdirs() }
-            runCatching {
-                val externalBackupFile = File(externalBackupDir, backupName)
-                dbFile.copyTo(externalBackupFile, overwrite = true)
-                trimOldBackups(externalBackupDir)
-            }
->>>>>>> main
         }
 
         return localBackupFile
@@ -96,7 +81,6 @@ class EmailBackupSender(private val context: Context) {
         backups.drop(MAX_BACKUP_FILES).forEach { it.delete() }
     }
 
-<<<<<<< codex/add-local-backup-with-versioning-9izg0e
     private fun savePublicBackup(backupName: String, dbFile: File) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
@@ -167,8 +151,6 @@ class EmailBackupSender(private val context: Context) {
         trimOldBackups(publicBackupDir)
     }
 
-=======
->>>>>>> main
     private fun buildContent(dbFile: File): MimeMultipart {
         val textPart = MimeBodyPart().apply {
             setText("这是每日记事应用自动备份的 SQLite 数据库文件。")
@@ -186,12 +168,8 @@ class EmailBackupSender(private val context: Context) {
     }
 
     companion object {
-<<<<<<< codex/add-local-backup-with-versioning-9izg0e
         private const val BACKUP_DIR_NAME = "backups"
         private const val PUBLIC_BACKUP_DIR_NAME = "DailyNoteBackups"
-=======
-        private const val BACKUP_DIR_NAME = "dailynote-backups"
->>>>>>> main
         private const val MAX_BACKUP_FILES = 5
     }
 }
