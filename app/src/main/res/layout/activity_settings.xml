@@ -110,7 +110,70 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="活力橙" />
+
+            <RadioButton
+                android:id="@+id/radioStyleCustom"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="自定义配色（RGB）" />
         </RadioGroup>
+
+        <LinearLayout
+            android:id="@+id/layoutCustomColor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <View
+                android:id="@+id/viewColorPreview"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:background="#6750A4" />
+
+            <TextView
+                android:id="@+id/textColorValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="RGB(103, 80, 164)" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="R" />
+
+            <SeekBar
+                android:id="@+id/seekRed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="255" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="G" />
+
+            <SeekBar
+                android:id="@+id/seekGreen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="255" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="B" />
+
+            <SeekBar
+                android:id="@+id/seekBlue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="255" />
+
+        </LinearLayout>
 
         <Button
             android:id="@+id/btnSaveConfig"

@@ -26,11 +26,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnLoadMore: Button
     private var visibleDayCount = DEFAULT_VISIBLE_DAYS
     private var currentColorStyle = ThemeStyleManager.STYLE_PURPLE
+    private var currentCustomColor = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeStyleManager.apply(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        ThemeStyleManager.applyCustomColorIfNeeded(this)
 
         dbHelper = NoteDatabaseHelper(this)
         adapter = NoteAdapter(onNoteLongClick = ::showNoteActionDialog)
@@ -65,7 +67,9 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        currentColorStyle = BackupPreferences(this).loadColorStyle()
+        val prefs = BackupPreferences(this)
+        currentColorStyle = prefs.loadColorStyle()
+        currentCustomColor = prefs.loadCustomThemeColor()
 
         tryBackupOnOpen()
         loadNotes()
@@ -74,8 +78,12 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        val latestStyle = BackupPreferences(this).loadColorStyle()
-        if (latestStyle != currentColorStyle) {
+        val prefs = BackupPreferences(this)
+        val latestStyle = prefs.loadColorStyle()
+        val latestCustomColor = prefs.loadCustomThemeColor()
+        if (latestStyle != currentColorStyle ||
+            (latestStyle == ThemeStyleManager.STYLE_CUSTOM && latestCustomColor != currentCustomColor)
+        ) {
             recreate()
             return
         }
