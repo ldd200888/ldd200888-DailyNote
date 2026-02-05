@@ -50,6 +50,16 @@ class BackupPreferences(context: Context) {
             .apply()
     }
 
+    fun isBiometricLockEnabled(): Boolean {
+        return prefs.getBoolean(KEY_BIOMETRIC_LOCK_ENABLED, false)
+    }
+
+    fun setBiometricLockEnabled(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean(KEY_BIOMETRIC_LOCK_ENABLED, enabled)
+            .apply()
+    }
+
     fun hasSuccessfulBackupToday(): Boolean {
         return prefs.getString(KEY_LAST_SUCCESS_DATE, "") == todayKey()
     }
@@ -74,5 +84,6 @@ class BackupPreferences(context: Context) {
         private const val KEY_LAST_SUCCESS_DATE = "last_success_date"
         private const val KEY_COLOR_STYLE = "color_style"
         private const val KEY_CUSTOM_THEME_COLOR = "custom_theme_color"
+        private const val KEY_BIOMETRIC_LOCK_ENABLED = "biometric_lock_enabled"
     }
 }

@@ -12,6 +12,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
@@ -46,12 +47,14 @@ class SettingsActivity : AppCompatActivity() {
         val btnSave = findViewById<Button>(R.id.btnSaveConfig)
         val btnImportRestore = findViewById<Button>(R.id.btnImportRestore)
         val textLocalBackupPath = findViewById<TextView>(R.id.textLocalBackupPath)
+        val switchBiometricLock = findViewById<SwitchCompat>(R.id.switchBiometricLock)
 
         editSmtpHost.setText(current.smtpHost)
         editSmtpPort.setText(current.smtpPort.toString())
         editSenderEmail.setText(current.senderEmail)
         editSenderPassword.setText(current.senderPassword)
         editRecipientEmail.setText(current.recipientEmail)
+        switchBiometricLock.isChecked = prefs.isBiometricLockEnabled()
 
         val currentCustomColor = prefs.loadCustomThemeColor()
         seekRed.progress = Color.red(currentCustomColor)
@@ -135,6 +138,7 @@ class SettingsActivity : AppCompatActivity() {
             prefs.saveConfig(config)
             prefs.saveColorStyle(selectedStyle)
             prefs.saveCustomThemeColor(selectedColor)
+            prefs.setBiometricLockEnabled(switchBiometricLock.isChecked)
             Toast.makeText(this, "设置已保存", Toast.LENGTH_SHORT).show()
             finish()
         }

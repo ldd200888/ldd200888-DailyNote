@@ -10,6 +10,9 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -28,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private var visibleDayCount = DEFAULT_VISIBLE_DAYS
     private var currentColorStyle = ThemeStyleManager.STYLE_PURPLE
     private var currentCustomColor = 0
+    private var hasAuthenticated = false
+    private var isBiometricLockEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeStyleManager.apply(this)
@@ -71,10 +76,16 @@ class MainActivity : AppCompatActivity() {
         val prefs = BackupPreferences(this)
         currentColorStyle = prefs.loadColorStyle()
         currentCustomColor = prefs.loadCustomThemeColor()
+        isBiometricLockEnabled = prefs.isBiometricLockEnabled()
 
-        tryBackupOnOpen()
-        loadNotes()
-        focusInputAndShowKeyboard()
+        if (isBiometricLockEnabled) {
+            authenticateWithBiometric()
+        } else {
+            hasAuthenticated = true
+            tryBackupOnOpen()
+            loadNotes()
+            focusInputAndShowKeyboard()
+        }
     }
 
     override fun onResume() {
@@ -83,6 +94,7 @@ class MainActivity : AppCompatActivity() {
         val prefs = BackupPreferences(this)
         val latestStyle = prefs.loadColorStyle()
         val latestCustomColor = prefs.loadCustomThemeColor()
+        val latestBiometricLockEnabled = prefs.isBiometricLockEnabled()
         if (latestStyle != currentColorStyle ||
             (latestStyle == ThemeStyleManager.STYLE_CUSTOM && latestCustomColor != currentCustomColor)
         ) {
@@ -90,7 +102,64 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        loadNotes()
+        if (latestBiometricLockEnabled != isBiometricLockEnabled) {
+            isBiometricLockEnabled = latestBiometricLockEnabled
+            hasAuthenticated = !isBiometricLockEnabled
+            if (isBiometricLockEnabled) {
+                authenticateWithBiometric()
+            }
+            return
+        }
+
+        if (hasAuthenticated) {
+            loadNotes()
+        }
+    }
+
+    private fun authenticateWithBiometric() {
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or
+            BiometricManager.Authenticators.BIOMETRIC_WEAK
+        val biometricManager = BiometricManager.from(this)
+
+        if (biometricManager.canAuthenticate(authenticators) != BiometricManager.BIOMETRIC_SUCCESS) {
+            Toast.makeText(this, "设备未设置指纹/生物识别，无法进入", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        val executor = ContextCompat.getMainExecutor(this)
+        val biometricPrompt = BiometricPrompt(
+            this,
+            executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    hasAuthenticated = true
+                    tryBackupOnOpen()
+                    loadNotes()
+                    focusInputAndShowKeyboard()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    Toast.makeText(this@MainActivity, "认证失败，应用将退出", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Toast.makeText(this@MainActivity, "指纹不匹配，请重试", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("身份验证")
+            .setSubtitle("请使用指纹进入日记")
+            .setNegativeButtonText("取消")
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
     }
 
     private fun tryBackupOnOpen() {
