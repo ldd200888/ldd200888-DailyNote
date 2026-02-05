@@ -1,6 +1,7 @@
 package com.example.dailynote
 
 import android.content.Context
+import android.graphics.Color
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,6 +40,16 @@ class BackupPreferences(context: Context) {
             .apply()
     }
 
+    fun loadCustomThemeColor(): Int {
+        return prefs.getInt(KEY_CUSTOM_THEME_COLOR, Color.parseColor("#6750A4"))
+    }
+
+    fun saveCustomThemeColor(color: Int) {
+        prefs.edit()
+            .putInt(KEY_CUSTOM_THEME_COLOR, color)
+            .apply()
+    }
+
     fun hasSuccessfulBackupToday(): Boolean {
         return prefs.getString(KEY_LAST_SUCCESS_DATE, "") == todayKey()
     }
@@ -62,5 +73,6 @@ class BackupPreferences(context: Context) {
         private const val KEY_RECIPIENT_EMAIL = "recipient_email"
         private const val KEY_LAST_SUCCESS_DATE = "last_success_date"
         private const val KEY_COLOR_STYLE = "color_style"
+        private const val KEY_CUSTOM_THEME_COLOR = "custom_theme_color"
     }
 }
