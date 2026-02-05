@@ -1,6 +1,7 @@
 package com.example.dailynote
 
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -9,9 +10,18 @@ import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
+
+    private val importBackupLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) {
+            return@registerForActivityResult
+        }
+        restoreDatabaseFromUri(uri)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeStyleManager.apply(this)
@@ -34,6 +44,7 @@ class SettingsActivity : AppCompatActivity() {
         val textColorValue = findViewById<TextView>(R.id.textColorValue)
         val viewColorPreview = findViewById<View>(R.id.viewColorPreview)
         val btnSave = findViewById<Button>(R.id.btnSaveConfig)
+        val btnImportRestore = findViewById<Button>(R.id.btnImportRestore)
 
         editSmtpHost.setText(current.smtpHost)
         editSmtpPort.setText(current.smtpPort.toString())
@@ -87,6 +98,10 @@ class SettingsActivity : AppCompatActivity() {
         updatePreview()
         updateCustomColorVisibility()
 
+        btnImportRestore.setOnClickListener {
+            importBackupLauncher.launch(arrayOf("application/octet-stream", "*/*"))
+        }
+
         btnSave.setOnClickListener {
             val port = editSmtpPort.text.toString().toIntOrNull()
             if (port == null) {
@@ -119,4 +134,41 @@ class SettingsActivity : AppCompatActivity() {
             finish()
         }
     }
+
+    private fun restoreDatabaseFromUri(uri: Uri) {
+        val dbFile = getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
+        val tempFile = File(cacheDir, "import_restore.db")
+
+        runCatching {
+            contentResolver.openInputStream(uri)?.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            } ?: error("无法读取备份文件")
+
+            if (!tempFile.exists() || tempFile.length() == 0L) {
+                error("备份文件为空")
+            }
+
+            NoteDatabaseHelper(this).close()
+            dbFile.parentFile?.mkdirs()
+
+            File(dbFile.absolutePath + "-wal").delete()
+            File(dbFile.absolutePath + "-shm").delete()
+            File(dbFile.absolutePath + "-journal").delete()
+
+            tempFile.inputStream().use { input ->
+                dbFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+        }.onSuccess {
+            Toast.makeText(this, "导入恢复成功，请重启应用查看最新内容", Toast.LENGTH_LONG).show()
+        }.onFailure {
+            Toast.makeText(this, "导入恢复失败：${it.message}", Toast.LENGTH_LONG).show()
+        }
+
+        tempFile.delete()
+    }
+
 }
