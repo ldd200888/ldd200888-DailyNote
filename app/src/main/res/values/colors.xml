@@ -1,6 +1,12 @@
 <resources>
     <color name="purple_500">#6200EE</color>
     <color name="purple_700">#3700B3</color>
+    <color name="blue_500">#1976D2</color>
+    <color name="blue_700">#0D47A1</color>
+    <color name="green_500">#2E7D32</color>
+    <color name="green_700">#1B5E20</color>
+    <color name="orange_500">#EF6C00</color>
+    <color name="orange_700">#E65100</color>
     <color name="teal_200">#03DAC5</color>
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>

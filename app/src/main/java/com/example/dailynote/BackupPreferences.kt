@@ -1,7 +1,9 @@
 package com.example.dailynote
 
 import android.content.Context
-import java.util.Calendar
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class BackupPreferences(context: Context) {
 
@@ -13,12 +15,7 @@ class BackupPreferences(context: Context) {
             smtpPort = prefs.getInt(KEY_SMTP_PORT, 465),
             senderEmail = prefs.getString(KEY_SENDER_EMAIL, "").orEmpty(),
             senderPassword = prefs.getString(KEY_SENDER_PASSWORD, "").orEmpty(),
-            recipientEmail = prefs.getString(KEY_RECIPIENT_EMAIL, "").orEmpty(),
-            backupHour = prefs.getInt(KEY_BACKUP_HOUR, 2),
-            backupMinute = prefs.getInt(KEY_BACKUP_MINUTE, 0),
-            backupWeekdays = parseWeekdays(
-                prefs.getString(KEY_BACKUP_WEEKDAYS, defaultWeekdaysText()).orEmpty()
-            )
+            recipientEmail = prefs.getString(KEY_RECIPIENT_EMAIL, "").orEmpty()
         )
     }
 
@@ -29,31 +26,32 @@ class BackupPreferences(context: Context) {
             .putString(KEY_SENDER_EMAIL, config.senderEmail)
             .putString(KEY_SENDER_PASSWORD, config.senderPassword)
             .putString(KEY_RECIPIENT_EMAIL, config.recipientEmail)
-            .putInt(KEY_BACKUP_HOUR, config.backupHour)
-            .putInt(KEY_BACKUP_MINUTE, config.backupMinute)
-            .putString(KEY_BACKUP_WEEKDAYS, config.backupWeekdays.sorted().joinToString(","))
             .apply()
     }
 
-    private fun parseWeekdays(text: String): Set<Int> {
-        return text.split(',')
-            .mapNotNull { it.trim().toIntOrNull() }
-            .filter { it in Calendar.SUNDAY..Calendar.SATURDAY }
-            .toSet()
-            .ifEmpty { defaultWeekdays() }
+    fun loadColorStyle(): String {
+        return prefs.getString(KEY_COLOR_STYLE, ThemeStyleManager.STYLE_PURPLE).orEmpty()
     }
 
-    private fun defaultWeekdaysText(): String = defaultWeekdays().sorted().joinToString(",")
+    fun saveColorStyle(style: String) {
+        prefs.edit()
+            .putString(KEY_COLOR_STYLE, style)
+            .apply()
+    }
 
-    private fun defaultWeekdays(): Set<Int> = setOf(
-        Calendar.SUNDAY,
-        Calendar.MONDAY,
-        Calendar.TUESDAY,
-        Calendar.WEDNESDAY,
-        Calendar.THURSDAY,
-        Calendar.FRIDAY,
-        Calendar.SATURDAY
-    )
+    fun hasAttemptedBackupToday(): Boolean {
+        return prefs.getString(KEY_LAST_ATTEMPT_DATE, "") == todayKey()
+    }
+
+    fun markBackupAttemptToday() {
+        prefs.edit()
+            .putString(KEY_LAST_ATTEMPT_DATE, todayKey())
+            .apply()
+    }
+
+    private fun todayKey(): String {
+        return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+    }
 
     companion object {
         private const val PREF_NAME = "backup_config"
@@ -62,8 +60,7 @@ class BackupPreferences(context: Context) {
         private const val KEY_SENDER_EMAIL = "sender_email"
         private const val KEY_SENDER_PASSWORD = "sender_password"
         private const val KEY_RECIPIENT_EMAIL = "recipient_email"
-        private const val KEY_BACKUP_HOUR = "backup_hour"
-        private const val KEY_BACKUP_MINUTE = "backup_minute"
-        private const val KEY_BACKUP_WEEKDAYS = "backup_weekdays"
+        private const val KEY_LAST_ATTEMPT_DATE = "last_attempt_date"
+        private const val KEY_COLOR_STYLE = "color_style"
     }
 }

@@ -5,4 +5,25 @@
         <item name="colorOnPrimary">@color/white</item>
         <item name="android:statusBarColor" tools:targetApi="l">@color/purple_700</item>
     </style>
+
+    <style name="Theme.DailyNote.Blue" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/blue_500</item>
+        <item name="colorPrimaryVariant">@color/blue_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/blue_700</item>
+    </style>
+
+    <style name="Theme.DailyNote.Green" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/green_500</item>
+        <item name="colorPrimaryVariant">@color/green_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/green_700</item>
+    </style>
+
+    <style name="Theme.DailyNote.Orange" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/orange_500</item>
+        <item name="colorPrimaryVariant">@color/orange_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/orange_700</item>
+    </style>
 </resources>
