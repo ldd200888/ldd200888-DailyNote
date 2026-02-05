@@ -45,6 +45,7 @@ class SettingsActivity : AppCompatActivity() {
         val viewColorPreview = findViewById<View>(R.id.viewColorPreview)
         val btnSave = findViewById<Button>(R.id.btnSaveConfig)
         val btnImportRestore = findViewById<Button>(R.id.btnImportRestore)
+        val textLocalBackupPath = findViewById<TextView>(R.id.textLocalBackupPath)
 
         editSmtpHost.setText(current.smtpHost)
         editSmtpPort.setText(current.smtpPort.toString())
@@ -101,6 +102,10 @@ class SettingsActivity : AppCompatActivity() {
         btnImportRestore.setOnClickListener {
             importBackupLauncher.launch(arrayOf("application/octet-stream", "*/*"))
         }
+
+        val backupDir = File(filesDir, "backups")
+        val backupPathText = runCatching { backupDir.canonicalPath }.getOrElse { backupDir.absolutePath }
+        textLocalBackupPath.text = "本地保存文件路径：$backupPathText"
 
         btnSave.setOnClickListener {
             val port = editSmtpPort.text.toString().toIntOrNull()

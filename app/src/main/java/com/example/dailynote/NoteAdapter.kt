@@ -60,18 +60,16 @@ class NoteAdapter(
 
     inner class HeaderHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textDate: TextView = itemView.findViewById(R.id.textDate)
-        private val textWeekLunar: TextView = itemView.findViewById(R.id.textWeekLunar)
 
         fun bind(header: NoteListItem.Header) {
-            textDate.text = header.date
-            textWeekLunar.text = buildWeekAndLunarText(header.date)
+            textDate.text = buildHeaderText(header.date)
         }
 
-        private fun buildWeekAndLunarText(dayText: String): String {
-            val date = parseDate(dayText) ?: return ""
+        private fun buildHeaderText(dayText: String): String {
+            val date = parseDate(dayText) ?: return dayText
             val weekText = weekFormatter.format(date)
             val lunarText = buildLunarText(date)
-            return "$weekText  $lunarText"
+            return "$dayText  $weekText  $lunarText"
         }
 
         private fun parseDate(dayText: String): Date? {
