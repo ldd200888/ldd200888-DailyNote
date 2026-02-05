@@ -99,7 +99,7 @@ class EmailBackupSender(private val context: Context) {
     }
 
     companion object {
-        private const val BACKUP_DIR_NAME = "backups"
+        private const val BACKUP_DIR_NAME = "dailynote-backups"
         private const val MAX_BACKUP_FILES = 5
     }
 }
