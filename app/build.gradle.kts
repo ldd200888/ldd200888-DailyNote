@@ -1,6 +1,20 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+
+val keystoreProperties = Properties().apply {
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    if (keystorePropertiesFile.exists()) {
+        load(FileInputStream(keystorePropertiesFile))
+    }
+}
+
+fun resolveSigningProperty(name: String): String? {
+    return keystoreProperties.getProperty(name) ?: System.getenv(name)
 }
 
 android {
@@ -17,9 +31,38 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val storeFilePath = resolveSigningProperty("STORE_FILE")
+            val storePasswordValue = resolveSigningProperty("STORE_PASSWORD")
+            val keyAliasValue = resolveSigningProperty("KEY_ALIAS")
+            val keyPasswordValue = resolveSigningProperty("KEY_PASSWORD")
+
+            if (
+                !storeFilePath.isNullOrBlank() &&
+                !storePasswordValue.isNullOrBlank() &&
+                !keyAliasValue.isNullOrBlank() &&
+                !keyPasswordValue.isNullOrBlank()
+            ) {
+                storeFile = rootProject.file(storeFilePath)
+                storePassword = storePasswordValue
+                keyAlias = keyAliasValue
+                keyPassword = keyPasswordValue
+
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -41,6 +84,21 @@ android {
                 "/META-INF/LICENSE.md"
             )
         }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val releaseRequested = allTasks.any { it.name.contains("Release", ignoreCase = true) }
+    val hasSigningCredentials =
+        !resolveSigningProperty("STORE_FILE").isNullOrBlank() &&
+        !resolveSigningProperty("STORE_PASSWORD").isNullOrBlank() &&
+        !resolveSigningProperty("KEY_ALIAS").isNullOrBlank() &&
+        !resolveSigningProperty("KEY_PASSWORD").isNullOrBlank()
+
+    if (releaseRequested && !hasSigningCredentials) {
+        throw GradleException(
+            "Release signing is not configured. Set STORE_FILE/STORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD in keystore.properties or environment variables."
+        )
     }
 }
 
