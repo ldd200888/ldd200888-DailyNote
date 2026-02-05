@@ -55,9 +55,10 @@
                 android:id="@+id/btnSettings"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="设置"
-                android:src="@android:drawable/ic_menu_manage" />
+                android:src="@android:drawable/ic_menu_preferences" />
 
             <Button
                 android:id="@+id/btnSave"
