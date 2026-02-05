@@ -1,10 +1,12 @@
 package com.example.dailynote
 
+import android.icu.util.ChineseCalendar
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -15,6 +17,8 @@ class NoteAdapter(
 
     private val items = mutableListOf<NoteListItem>()
     private val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val dayFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    private val weekFormatter = SimpleDateFormat("EEEE", Locale.CHINA)
 
     fun submit(groupedNotes: Map<String, List<Note>>) {
         items.clear()
@@ -56,9 +60,54 @@ class NoteAdapter(
 
     inner class HeaderHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textDate: TextView = itemView.findViewById(R.id.textDate)
+        private val textWeekLunar: TextView = itemView.findViewById(R.id.textWeekLunar)
 
         fun bind(header: NoteListItem.Header) {
             textDate.text = header.date
+            textWeekLunar.text = buildWeekAndLunarText(header.date)
+        }
+
+        private fun buildWeekAndLunarText(dayText: String): String {
+            val date = parseDate(dayText) ?: return ""
+            val weekText = weekFormatter.format(date)
+            val lunarText = buildLunarText(date)
+            return "$weekText  $lunarText"
+        }
+
+        private fun parseDate(dayText: String): Date? {
+            return try {
+                dayFormatter.parse(dayText)
+            } catch (_: ParseException) {
+                null
+            }
+        }
+
+        private fun buildLunarText(date: Date): String {
+            val lunarCalendar = ChineseCalendar().apply {
+                timeInMillis = date.time
+            }
+            val month = lunarCalendar.get(ChineseCalendar.MONTH) + 1
+            val day = lunarCalendar.get(ChineseCalendar.DAY_OF_MONTH)
+            val isLeapMonth = lunarCalendar.get(ChineseCalendar.IS_LEAP_MONTH) == 1
+            val monthText = if (isLeapMonth) "闰${lunarMonthName(month)}" else lunarMonthName(month)
+            return "农历$monthText${lunarDayName(day)}"
+        }
+
+        private fun lunarMonthName(month: Int): String {
+            val monthNames = arrayOf(
+                "正月", "二月", "三月", "四月", "五月", "六月",
+                "七月", "八月", "九月", "十月", "冬月", "腊月"
+            )
+            return monthNames.getOrElse(month - 1) { "${month}月" }
+        }
+
+        private fun lunarDayName(day: Int): String {
+            val dayNames = arrayOf(
+                "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
+                "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
+                "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"
+            )
+            return dayNames.getOrElse(day - 1) { day.toString() }
         }
     }
 
