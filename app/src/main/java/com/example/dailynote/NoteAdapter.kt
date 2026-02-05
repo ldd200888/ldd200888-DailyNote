@@ -4,6 +4,7 @@ import android.icu.util.ChineseCalendar
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.text.ParseException
@@ -16,19 +17,36 @@ class NoteAdapter(
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val items = mutableListOf<NoteListItem>()
+    private val groupedNotes = linkedMapOf<String, List<Note>>()
+    private val expandedDays = linkedSetOf<String>()
+
     private val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
     private val dayFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private val weekFormatter = SimpleDateFormat("EEEE", Locale.CHINA)
+    private val todayText = dayFormatter.format(Date())
 
-    fun submit(groupedNotes: Map<String, List<Note>>) {
-        items.clear()
-        groupedNotes.forEach { (day, dayNotes) ->
-            items.add(NoteListItem.Header(day))
-            dayNotes.forEach { note ->
-                items.add(NoteListItem.Content(note))
-            }
+    fun submit(grouped: Map<String, List<Note>>) {
+        groupedNotes.clear()
+        groupedNotes.putAll(grouped)
+
+        if (groupedNotes.isEmpty()) {
+            expandedDays.clear()
+            items.clear()
+            notifyDataSetChanged()
+            return
         }
-        notifyDataSetChanged()
+
+        val validDays = groupedNotes.keys.toSet()
+        expandedDays.retainAll(validDays)
+
+        if (todayText in validDays && expandedDays.isEmpty()) {
+            expandedDays.add(todayText)
+        }
+        if (todayText !in validDays && expandedDays.isEmpty()) {
+            expandedDays.add(groupedNotes.keys.first())
+        }
+
+        rebuildItems()
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -58,11 +76,38 @@ class NoteAdapter(
         }
     }
 
+    private fun rebuildItems() {
+        items.clear()
+        groupedNotes.forEach { (day, dayNotes) ->
+            val expanded = expandedDays.contains(day)
+            items.add(NoteListItem.Header(date = day, isExpanded = expanded, noteCount = dayNotes.size))
+            if (expanded) {
+                dayNotes.forEach { note ->
+                    items.add(NoteListItem.Content(note))
+                }
+            }
+        }
+        notifyDataSetChanged()
+    }
+
     inner class HeaderHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val textDate: TextView = itemView.findViewById(R.id.textDate)
+        private val textCount: TextView = itemView.findViewById(R.id.textCount)
+        private val imageExpand: ImageView = itemView.findViewById(R.id.imageExpand)
 
         fun bind(header: NoteListItem.Header) {
             textDate.text = buildHeaderText(header.date)
+            textCount.text = "${header.noteCount} 条"
+            imageExpand.rotation = if (header.isExpanded) 180f else 0f
+
+            itemView.setOnClickListener {
+                if (header.isExpanded) {
+                    expandedDays.remove(header.date)
+                } else {
+                    expandedDays.add(header.date)
+                }
+                rebuildItems()
+            }
         }
 
         private fun buildHeaderText(dayText: String): String {
