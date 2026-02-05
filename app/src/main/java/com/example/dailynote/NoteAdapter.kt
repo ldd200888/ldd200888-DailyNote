@@ -9,7 +9,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class NoteAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class NoteAdapter(
+    private val onNoteLongClick: (Note) -> Unit
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val items = mutableListOf<NoteListItem>()
     private val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -67,6 +69,10 @@ class NoteAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         fun bind(note: Note) {
             textContent.text = note.content
             textTime.text = timeFormatter.format(Date(note.createdAt))
+            itemView.setOnLongClickListener {
+                onNoteLongClick(note)
+                true
+            }
         }
     }
 

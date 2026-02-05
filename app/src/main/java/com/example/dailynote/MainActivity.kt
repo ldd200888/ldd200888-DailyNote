@@ -5,25 +5,33 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var dbHelper: NoteDatabaseHelper
     private lateinit var adapter: NoteAdapter
 
+    private lateinit var editNote: EditText
+    private lateinit var btnLoadMore: Button
+    private var visibleDayCount = DEFAULT_VISIBLE_DAYS
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         dbHelper = NoteDatabaseHelper(this)
-        adapter = NoteAdapter()
+        adapter = NoteAdapter(onNoteLongClick = ::showNoteActionDialog)
 
-        val editNote = findViewById<EditText>(R.id.editNote)
+        editNote = findViewById(R.id.editNote)
         val btnSave = findViewById<Button>(R.id.btnSave)
         val btnSettings = findViewById<Button>(R.id.btnSettings)
+        btnLoadMore = findViewById(R.id.btnLoadMore)
         val recyclerNotes = findViewById<RecyclerView>(R.id.recyclerNotes)
 
         recyclerNotes.layoutManager = LinearLayoutManager(this)
@@ -37,6 +45,12 @@ class MainActivity : AppCompatActivity() {
             }
             dbHelper.addNote(text)
             editNote.text?.clear()
+            visibleDayCount = DEFAULT_VISIBLE_DAYS
+            loadNotes()
+        }
+
+        btnLoadMore.setOnClickListener {
+            visibleDayCount += DEFAULT_VISIBLE_DAYS
             loadNotes()
         }
 
@@ -54,7 +68,60 @@ class MainActivity : AppCompatActivity() {
         loadNotes()
     }
 
+    private fun showNoteActionDialog(note: Note) {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.dialog_note_actions, null)
+        dialog.setContentView(view)
+
+        val btnEdit = view.findViewById<Button>(R.id.btnEdit)
+        val btnDelete = view.findViewById<Button>(R.id.btnDelete)
+
+        btnEdit.setOnClickListener {
+            dialog.dismiss()
+            showEditDialog(note)
+        }
+        btnDelete.setOnClickListener {
+            dialog.dismiss()
+            dbHelper.deleteNote(note.id)
+            loadNotes()
+            Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+    }
+
+    private fun showEditDialog(note: Note) {
+        val input = EditText(this).apply {
+            setText(note.content)
+            setSelection(text.length)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("修改记事")
+            .setView(input)
+            .setPositiveButton("保存") { _, _ ->
+                val updated = input.text.toString().trim()
+                if (updated.isBlank()) {
+                    Toast.makeText(this, "内容不能为空", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                dbHelper.updateNote(note.id, updated)
+                loadNotes()
+                Toast.makeText(this, "已更新", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
     private fun loadNotes() {
-        adapter.submit(dbHelper.getNotesGroupedByDay())
+        val grouped = dbHelper.getNotesGroupedByDay(visibleDayCount)
+        adapter.submit(grouped)
+
+        val allDayCount = dbHelper.getNotesGroupedByDay().size
+        btnLoadMore.visibility = if (allDayCount > visibleDayCount) View.VISIBLE else View.GONE
+    }
+
+    companion object {
+        private const val DEFAULT_VISIBLE_DAYS = 5
     }
 }

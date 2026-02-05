@@ -36,7 +36,18 @@ class NoteDatabaseHelper(context: Context) :
         writableDatabase.insert(TABLE_NOTES, null, values)
     }
 
-    fun getNotesGroupedByDay(): Map<String, List<Note>> {
+    fun updateNote(id: Long, content: String) {
+        val values = ContentValues().apply {
+            put(COL_CONTENT, content)
+        }
+        writableDatabase.update(TABLE_NOTES, values, "$COL_ID=?", arrayOf(id.toString()))
+    }
+
+    fun deleteNote(id: Long) {
+        writableDatabase.delete(TABLE_NOTES, "$COL_ID=?", arrayOf(id.toString()))
+    }
+
+    fun getNotesGroupedByDay(dayLimit: Int? = null): Map<String, List<Note>> {
         val grouped = linkedMapOf<String, MutableList<Note>>()
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
@@ -61,6 +72,9 @@ class NoteDatabaseHelper(context: Context) :
                 )
                 val day = formatter.format(Date(note.createdAt))
                 if (grouped[day] == null) {
+                    if (dayLimit != null && grouped.size >= dayLimit) {
+                        continue
+                    }
                     grouped[day] = mutableListOf()
                 }
                 grouped.getValue(day).add(note)
