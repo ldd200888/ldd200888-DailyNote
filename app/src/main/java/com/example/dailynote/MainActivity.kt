@@ -91,16 +91,15 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (prefs.hasAttemptedBackupToday()) {
+        if (prefs.hasSuccessfulBackupToday()) {
             return
         }
-
-        prefs.markBackupAttemptToday()
 
         lifecycleScope.launch(Dispatchers.IO) {
             runCatching {
                 EmailBackupSender(applicationContext).sendDatabaseBackup(config)
             }.onSuccess {
+                prefs.markBackupSuccessToday()
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@MainActivity, "今日备份成功", Toast.LENGTH_SHORT).show()
                 }

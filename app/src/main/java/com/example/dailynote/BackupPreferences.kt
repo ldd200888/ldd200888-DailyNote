@@ -39,13 +39,13 @@ class BackupPreferences(context: Context) {
             .apply()
     }
 
-    fun hasAttemptedBackupToday(): Boolean {
-        return prefs.getString(KEY_LAST_ATTEMPT_DATE, "") == todayKey()
+    fun hasSuccessfulBackupToday(): Boolean {
+        return prefs.getString(KEY_LAST_SUCCESS_DATE, "") == todayKey()
     }
 
-    fun markBackupAttemptToday() {
+    fun markBackupSuccessToday() {
         prefs.edit()
-            .putString(KEY_LAST_ATTEMPT_DATE, todayKey())
+            .putString(KEY_LAST_SUCCESS_DATE, todayKey())
             .apply()
     }
 
@@ -60,7 +60,7 @@ class BackupPreferences(context: Context) {
         private const val KEY_SENDER_EMAIL = "sender_email"
         private const val KEY_SENDER_PASSWORD = "sender_password"
         private const val KEY_RECIPIENT_EMAIL = "recipient_email"
-        private const val KEY_LAST_ATTEMPT_DATE = "last_attempt_date"
+        private const val KEY_LAST_SUCCESS_DATE = "last_success_date"
         private const val KEY_COLOR_STYLE = "color_style"
     }
 }
