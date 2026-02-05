@@ -13,7 +13,7 @@
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
-            android:label="备份设置" />
+            android:label="设置" />
 
         <activity
             android:name=".MainActivity"

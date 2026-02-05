@@ -2,15 +2,15 @@ package com.example.dailynote
 
 import android.os.Bundle
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import java.util.Calendar
 
 class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeStyleManager.apply(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
@@ -22,53 +22,26 @@ class SettingsActivity : AppCompatActivity() {
         val editSenderEmail = findViewById<EditText>(R.id.editSenderEmail)
         val editSenderPassword = findViewById<EditText>(R.id.editSenderPassword)
         val editRecipientEmail = findViewById<EditText>(R.id.editRecipientEmail)
-        val editHour = findViewById<EditText>(R.id.editBackupHour)
-        val editMinute = findViewById<EditText>(R.id.editBackupMinute)
-        val checkSun = findViewById<CheckBox>(R.id.checkSun)
-        val checkMon = findViewById<CheckBox>(R.id.checkMon)
-        val checkTue = findViewById<CheckBox>(R.id.checkTue)
-        val checkWed = findViewById<CheckBox>(R.id.checkWed)
-        val checkThu = findViewById<CheckBox>(R.id.checkThu)
-        val checkFri = findViewById<CheckBox>(R.id.checkFri)
-        val checkSat = findViewById<CheckBox>(R.id.checkSat)
+        val radioGroupColorStyle = findViewById<RadioGroup>(R.id.radioGroupColorStyle)
         val btnSave = findViewById<Button>(R.id.btnSaveConfig)
-
-        val weekdayChecks = mapOf(
-            Calendar.SUNDAY to checkSun,
-            Calendar.MONDAY to checkMon,
-            Calendar.TUESDAY to checkTue,
-            Calendar.WEDNESDAY to checkWed,
-            Calendar.THURSDAY to checkThu,
-            Calendar.FRIDAY to checkFri,
-            Calendar.SATURDAY to checkSat
-        )
 
         editSmtpHost.setText(current.smtpHost)
         editSmtpPort.setText(current.smtpPort.toString())
         editSenderEmail.setText(current.senderEmail)
         editSenderPassword.setText(current.senderPassword)
         editRecipientEmail.setText(current.recipientEmail)
-        editHour.setText(current.backupHour.toString())
-        editMinute.setText(current.backupMinute.toString())
-        current.backupWeekdays.forEach { weekday ->
-            weekdayChecks[weekday]?.isChecked = true
+
+        when (prefs.loadColorStyle()) {
+            ThemeStyleManager.STYLE_BLUE -> radioGroupColorStyle.check(R.id.radioStyleBlue)
+            ThemeStyleManager.STYLE_GREEN -> radioGroupColorStyle.check(R.id.radioStyleGreen)
+            ThemeStyleManager.STYLE_ORANGE -> radioGroupColorStyle.check(R.id.radioStyleOrange)
+            else -> radioGroupColorStyle.check(R.id.radioStylePurple)
         }
 
         btnSave.setOnClickListener {
-            val hour = editHour.text.toString().toIntOrNull()
-            val minute = editMinute.text.toString().toIntOrNull()
             val port = editSmtpPort.text.toString().toIntOrNull()
-            val selectedWeekdays = weekdayChecks
-                .filterValues { it.isChecked }
-                .keys
-                .toSet()
-
-            if (hour == null || minute == null || port == null || hour !in 0..23 || minute !in 0..59) {
-                Toast.makeText(this, "请输入正确的端口和时间", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (selectedWeekdays.isEmpty()) {
-                Toast.makeText(this, "请至少选择一个备份日", Toast.LENGTH_SHORT).show()
+            if (port == null) {
+                Toast.makeText(this, "请输入正确的端口", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -77,15 +50,19 @@ class SettingsActivity : AppCompatActivity() {
                 smtpPort = port,
                 senderEmail = editSenderEmail.text.toString().trim(),
                 senderPassword = editSenderPassword.text.toString().trim(),
-                recipientEmail = editRecipientEmail.text.toString().trim(),
-                backupHour = hour,
-                backupMinute = minute,
-                backupWeekdays = selectedWeekdays
+                recipientEmail = editRecipientEmail.text.toString().trim()
             )
 
+            val selectedStyle = when (radioGroupColorStyle.checkedRadioButtonId) {
+                R.id.radioStyleBlue -> ThemeStyleManager.STYLE_BLUE
+                R.id.radioStyleGreen -> ThemeStyleManager.STYLE_GREEN
+                R.id.radioStyleOrange -> ThemeStyleManager.STYLE_ORANGE
+                else -> ThemeStyleManager.STYLE_PURPLE
+            }
+
             prefs.saveConfig(config)
-            BackupScheduler.schedule(this, config.backupHour, config.backupMinute)
-            Toast.makeText(this, "备份配置已保存", Toast.LENGTH_SHORT).show()
+            prefs.saveColorStyle(selectedStyle)
+            Toast.makeText(this, "设置已保存", Toast.LENGTH_SHORT).show()
             finish()
         }
     }

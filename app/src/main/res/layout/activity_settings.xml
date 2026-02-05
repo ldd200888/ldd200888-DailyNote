@@ -14,6 +14,7 @@
             android:layout_height="wrap_content"
             android:text="SMTP主机"
             android:textStyle="bold" />
+
         <EditText
             android:id="@+id/editSmtpHost"
             android:layout_width="match_parent"
@@ -26,6 +27,7 @@
             android:layout_marginTop="10dp"
             android:text="SMTP端口"
             android:textStyle="bold" />
+
         <EditText
             android:id="@+id/editSmtpPort"
             android:layout_width="match_parent"
@@ -39,6 +41,7 @@
             android:layout_marginTop="10dp"
             android:text="发件邮箱（163邮箱）"
             android:textStyle="bold" />
+
         <EditText
             android:id="@+id/editSenderEmail"
             android:layout_width="match_parent"
@@ -51,6 +54,7 @@
             android:layout_marginTop="10dp"
             android:text="发件邮箱密码/授权码"
             android:textStyle="bold" />
+
         <EditText
             android:id="@+id/editSenderPassword"
             android:layout_width="match_parent"
@@ -63,6 +67,7 @@
             android:layout_marginTop="10dp"
             android:text="收件邮箱"
             android:textStyle="bold" />
+
         <EditText
             android:id="@+id/editRecipientEmail"
             android:layout_width="match_parent"
@@ -73,105 +78,46 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="备份小时（0-23）"
-            android:textStyle="bold" />
-        <EditText
-            android:id="@+id/editBackupHour"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="number" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="备份分钟（0-59）"
-            android:textStyle="bold" />
-        <EditText
-            android:id="@+id/editBackupMinute"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="number" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="每周备份日（可多选）"
+            android:text="应用配色风格"
             android:textStyle="bold" />
 
-        <LinearLayout
+        <RadioGroup
+            android:id="@+id/radioGroupColorStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <CheckBox
-                android:id="@+id/checkSun"
-                android:layout_width="0dp"
+            <RadioButton
+                android:id="@+id/radioStylePurple"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="周日" />
+                android:text="经典紫" />
 
-            <CheckBox
-                android:id="@+id/checkMon"
-                android:layout_width="0dp"
+            <RadioButton
+                android:id="@+id/radioStyleBlue"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="周一" />
+                android:text="清新蓝" />
 
-            <CheckBox
-                android:id="@+id/checkTue"
-                android:layout_width="0dp"
+            <RadioButton
+                android:id="@+id/radioStyleGreen"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="周二" />
+                android:text="自然绿" />
 
-            <CheckBox
-                android:id="@+id/checkWed"
-                android:layout_width="0dp"
+            <RadioButton
+                android:id="@+id/radioStyleOrange"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="周三" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <CheckBox
-                android:id="@+id/checkThu"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="周四" />
-
-            <CheckBox
-                android:id="@+id/checkFri"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="周五" />
-
-            <CheckBox
-                android:id="@+id/checkSat"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="周六" />
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-        </LinearLayout>
+                android:text="活力橙" />
+        </RadioGroup>
 
         <Button
             android:id="@+id/btnSaveConfig"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:text="保存并启用备份" />
+            android:text="保存设置" />
 
     </LinearLayout>
 </ScrollView>

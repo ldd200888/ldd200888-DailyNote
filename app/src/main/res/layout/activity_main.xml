@@ -6,14 +6,6 @@
     android:padding="12dp">
 
     <Button
-        android:id="@+id/btnSettings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="备份设置"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
         android:id="@+id/btnLoadMore"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -32,7 +24,7 @@
         app:layout_constraintBottom_toTopOf="@id/btnLoadMore"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnSettings" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/bottomBar"
@@ -53,12 +45,27 @@
             android:hint="记录今天的事情..."
             android:minHeight="56dp" />
 
-        <Button
-            android:id="@+id/btnSave"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="保存" />
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnSettings"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="设置"
+                android:src="@android:drawable/ic_menu_manage" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="保存" />
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

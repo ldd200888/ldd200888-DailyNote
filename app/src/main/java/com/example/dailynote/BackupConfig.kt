@@ -5,8 +5,5 @@ data class BackupConfig(
     val smtpPort: Int,
     val senderEmail: String,
     val senderPassword: String,
-    val recipientEmail: String,
-    val backupHour: Int,
-    val backupMinute: Int,
-    val backupWeekdays: Set<Int>
+    val recipientEmail: String
 )

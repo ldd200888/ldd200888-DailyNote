@@ -2,15 +2,20 @@ package com.example.dailynote
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.Toast
-import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,8 +25,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var editNote: EditText
     private lateinit var btnLoadMore: Button
     private var visibleDayCount = DEFAULT_VISIBLE_DAYS
+    private var currentColorStyle = ThemeStyleManager.STYLE_PURPLE
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeStyleManager.apply(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -30,7 +37,7 @@ class MainActivity : AppCompatActivity() {
 
         editNote = findViewById(R.id.editNote)
         val btnSave = findViewById<Button>(R.id.btnSave)
-        val btnSettings = findViewById<Button>(R.id.btnSettings)
+        val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
         btnLoadMore = findViewById(R.id.btnLoadMore)
         val recyclerNotes = findViewById<RecyclerView>(R.id.recyclerNotes)
 
@@ -58,14 +65,51 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        val config = BackupPreferences(this).loadConfig()
-        BackupScheduler.schedule(this, config.backupHour, config.backupMinute)
+        currentColorStyle = BackupPreferences(this).loadColorStyle()
+
+        tryBackupOnOpen()
         loadNotes()
     }
 
     override fun onResume() {
         super.onResume()
+
+        val latestStyle = BackupPreferences(this).loadColorStyle()
+        if (latestStyle != currentColorStyle) {
+            recreate()
+            return
+        }
+
         loadNotes()
+    }
+
+    private fun tryBackupOnOpen() {
+        val prefs = BackupPreferences(this)
+        val config = prefs.loadConfig()
+
+        if (config.senderEmail.isBlank() || config.senderPassword.isBlank() || config.recipientEmail.isBlank()) {
+            return
+        }
+
+        if (prefs.hasAttemptedBackupToday()) {
+            return
+        }
+
+        prefs.markBackupAttemptToday()
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            runCatching {
+                EmailBackupSender(applicationContext).sendDatabaseBackup(config)
+            }.onSuccess {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "今日备份成功", Toast.LENGTH_SHORT).show()
+                }
+            }.onFailure {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "今日备份失败", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun showNoteActionDialog(note: Note) {
