@@ -31,11 +31,23 @@ class EmailBackupSender(private val context: Context) {
             BackupZipUtils.writeEncryptedZip(dbFile, output, backupPassword)
         }
 
+        val useSsl = config.smtpPort == 465
         val props = Properties().apply {
+            put("mail.transport.protocol", "smtp")
             put("mail.smtp.auth", "true")
             put("mail.smtp.host", config.smtpHost)
             put("mail.smtp.port", config.smtpPort.toString())
-            put("mail.smtp.ssl.enable", "true")
+            put("mail.smtp.connectiontimeout", "10000")
+            put("mail.smtp.timeout", "10000")
+            if (useSsl) {
+                put("mail.smtp.ssl.enable", "true")
+                put("mail.smtp.ssl.trust", config.smtpHost)
+                put("mail.smtp.socketFactory.port", config.smtpPort.toString())
+                put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
+            } else {
+                put("mail.smtp.starttls.enable", "true")
+                put("mail.smtp.starttls.required", "true")
+            }
         }
 
         val session = Session.getInstance(props, object : javax.mail.Authenticator() {
