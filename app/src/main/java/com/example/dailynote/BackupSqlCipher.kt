@@ -14,9 +14,9 @@ object BackupSqlCipher {
             SQLiteDatabase.OPEN_READONLY
         )
         try {
-            db.rawExecSQL("ATTACH DATABASE ? AS encrypted KEY ?", arrayOf(outputFile.absolutePath, password))
-            db.rawExecSQL("SELECT sqlcipher_export('encrypted')")
-            db.rawExecSQL("DETACH DATABASE encrypted")
+            db.execSQL("ATTACH DATABASE ? AS encrypted KEY ?", arrayOf(outputFile.absolutePath, password))
+            db.execSQL("SELECT sqlcipher_export('encrypted')")
+            db.execSQL("DETACH DATABASE encrypted")
         } finally {
             db.close()
         }
@@ -31,10 +31,10 @@ object BackupSqlCipher {
             SQLiteDatabase.OPEN_READONLY
         )
         try {
-            db.rawExecSQL("ATTACH DATABASE ? AS plaintext KEY ''", arrayOf(outputFile.absolutePath))
-            db.rawExecSQL("PRAGMA plaintext.cipher_plaintext_header_size = 32")
-            db.rawExecSQL("SELECT sqlcipher_export('plaintext')")
-            db.rawExecSQL("DETACH DATABASE plaintext")
+            db.execSQL("ATTACH DATABASE ? AS plaintext KEY ''", arrayOf(outputFile.absolutePath))
+            db.execSQL("PRAGMA plaintext.cipher_plaintext_header_size = 32")
+            db.execSQL("SELECT sqlcipher_export('plaintext')")
+            db.execSQL("DETACH DATABASE plaintext")
         } finally {
             db.close()
         }
