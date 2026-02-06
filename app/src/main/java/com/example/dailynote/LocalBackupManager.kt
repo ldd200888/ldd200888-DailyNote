@@ -69,7 +69,8 @@ class LocalBackupManager(private val context: Context) {
     private fun findLatestBackupOnAndroidQPlus(): File? {
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
-            MediaStore.MediaColumns.DATE_MODIFIED
+            MediaStore.MediaColumns.DATE_MODIFIED,
+            MediaStore.MediaColumns.DISPLAY_NAME
         )
         val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} = ?"
         val selectionArgs = arrayOf("${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME/")
@@ -84,8 +85,18 @@ class LocalBackupManager(private val context: Context) {
         )?.use { cursor ->
             if (!cursor.moveToFirst()) return@use null
             val idIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-            val id = cursor.getLong(idIndex)
-            Uri.withAppendedPath(MediaStore.Files.getContentUri("external"), id.toString())
+            val nameIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
+
+            do {
+                val displayName = cursor.getString(nameIndex).orEmpty()
+                if (!displayName.endsWith(".db", ignoreCase = true)) {
+                    continue
+                }
+                val id = cursor.getLong(idIndex)
+                return@use Uri.withAppendedPath(MediaStore.Files.getContentUri("external"), id.toString())
+            } while (cursor.moveToNext())
+
+            null
         } ?: return null
 
         val tempFile = File.createTempFile("daily_note_restore_", ".db", context.cacheDir)
@@ -116,7 +127,7 @@ class LocalBackupManager(private val context: Context) {
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, backupName)
                 put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME/")
             }
 
             val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), values) ?: return

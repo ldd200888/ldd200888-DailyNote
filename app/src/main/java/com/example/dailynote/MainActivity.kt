@@ -1,6 +1,7 @@
 package com.example.dailynote
 
 import android.content.Intent
+import android.util.Log
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -187,10 +188,14 @@ class MainActivity : AppCompatActivity() {
         }.onSuccess { restored ->
             if (restored) {
                 Toast.makeText(this, "检测到本地备份，已自动恢复", Toast.LENGTH_SHORT).show()
+                prefs.markFirstLaunchHandled()
+            } else {
+                Toast.makeText(this, "未找到可恢复的本地备份", Toast.LENGTH_SHORT).show()
             }
+        }.onFailure { throwable ->
+            Log.e(TAG, "首次启动自动恢复失败", throwable)
+            Toast.makeText(this, "自动恢复失败，请检查备份文件", Toast.LENGTH_SHORT).show()
         }
-
-        prefs.markFirstLaunchHandled()
     }
 
     private fun tryBackupOnOpen() {
@@ -345,5 +350,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val DEFAULT_VISIBLE_DAYS = 5
+        private const val TAG = "MainActivity"
     }
 }
