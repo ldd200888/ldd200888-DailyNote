@@ -60,13 +60,23 @@ class BackupPreferences(context: Context) {
             .apply()
     }
 
-    fun hasSuccessfulBackupToday(): Boolean {
-        return prefs.getString(KEY_LAST_SUCCESS_DATE, "") == todayKey()
+    fun hasSuccessfulEmailBackupToday(): Boolean {
+        return prefs.getString(KEY_LAST_EMAIL_SUCCESS_DATE, "") == todayKey()
     }
 
-    fun markBackupSuccessToday() {
+    fun markEmailBackupSuccessToday() {
         prefs.edit()
-            .putString(KEY_LAST_SUCCESS_DATE, todayKey())
+            .putString(KEY_LAST_EMAIL_SUCCESS_DATE, todayKey())
+            .apply()
+    }
+
+    fun hasSuccessfulLocalBackupToday(): Boolean {
+        return prefs.getString(KEY_LAST_LOCAL_SUCCESS_DATE, "") == todayKey()
+    }
+
+    fun markLocalBackupSuccessToday() {
+        prefs.edit()
+            .putString(KEY_LAST_LOCAL_SUCCESS_DATE, todayKey())
             .apply()
     }
 
@@ -81,7 +91,8 @@ class BackupPreferences(context: Context) {
         private const val KEY_SENDER_EMAIL = "sender_email"
         private const val KEY_SENDER_PASSWORD = "sender_password"
         private const val KEY_RECIPIENT_EMAIL = "recipient_email"
-        private const val KEY_LAST_SUCCESS_DATE = "last_success_date"
+        private const val KEY_LAST_EMAIL_SUCCESS_DATE = "last_email_success_date"
+        private const val KEY_LAST_LOCAL_SUCCESS_DATE = "last_local_success_date"
         private const val KEY_COLOR_STYLE = "color_style"
         private const val KEY_CUSTOM_THEME_COLOR = "custom_theme_color"
         private const val KEY_BIOMETRIC_LOCK_ENABLED = "biometric_lock_enabled"
