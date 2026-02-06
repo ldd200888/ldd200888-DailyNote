@@ -221,7 +221,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun restoreDatabaseFromUri(uri: Uri) {
         val dbFile = getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
-        val tempFile = File(cacheDir, "import_restore.db")
+        val tempFile = File(cacheDir, "import_restore.zip")
         val backupPassword = BackupPreferences(this).loadBackupPassword()
 
         runCatching {
@@ -242,25 +242,7 @@ class SettingsActivity : AppCompatActivity() {
             File(dbFile.absolutePath + "-shm").delete()
             File(dbFile.absolutePath + "-journal").delete()
 
-            if (backupPassword.isBlank()) {
-                tempFile.inputStream().use { input ->
-                    dbFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-            } else {
-                val tempPlain = File(cacheDir, "import_plain.db")
-                try {
-                    BackupSqlCipher.exportPlaintextDatabase(this, tempFile, tempPlain, backupPassword)
-                    tempPlain.inputStream().use { input ->
-                        dbFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                } finally {
-                    tempPlain.delete()
-                }
-            }
+            BackupZipUtils.extractEncryptedZip(tempFile, dbFile, backupPassword)
         }.onSuccess {
             Toast.makeText(this, "导入恢复成功，请重启应用查看最新内容", Toast.LENGTH_LONG).show()
         }.onFailure {

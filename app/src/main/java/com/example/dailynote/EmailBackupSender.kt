@@ -24,13 +24,11 @@ class EmailBackupSender(private val context: Context) {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
         if (!dbFile.exists()) return
 
-        val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.db"
+        val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.zip"
         val backupFile = File(context.cacheDir, backupName)
         val backupPassword = BackupPreferences(context).loadBackupPassword()
-        if (backupPassword.isBlank()) {
-            dbFile.copyTo(backupFile, overwrite = true)
-        } else {
-            BackupSqlCipher.exportEncryptedBackup(context, dbFile, backupFile, backupPassword)
+        backupFile.outputStream().use { output ->
+            BackupZipUtils.writeEncryptedZip(dbFile, output, backupPassword)
         }
 
         val props = Properties().apply {
@@ -71,7 +69,7 @@ class EmailBackupSender(private val context: Context) {
 
     private fun buildContent(dbFile: File): MimeMultipart {
         val textPart = MimeBodyPart().apply {
-            setText("这是每日记事应用自动备份的 SQLite 数据库文件。")
+            setText("这是每日记事应用自动备份的数据库压缩包（ZIP）。")
         }
 
         val attachmentPart = MimeBodyPart().apply {

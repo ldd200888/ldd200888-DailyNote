@@ -113,5 +113,5 @@ dependencies {
     implementation("androidx.sqlite:sqlite:2.4.0")
     implementation("com.sun.mail:android-mail:1.6.7")
     implementation("com.sun.mail:android-activation:1.6.7")
-    implementation("net.zetetic:android-database-sqlcipher:4.5.4")
+    implementation("net.lingala.zip4j:zip4j:2.11.5")
 }
