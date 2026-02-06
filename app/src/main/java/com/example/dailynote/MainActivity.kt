@@ -55,6 +55,7 @@ class MainActivity : AppCompatActivity() {
 
         editNote = findViewById(R.id.editNote)
         val btnSave = findViewById<Button>(R.id.btnSave)
+        val btnInfo = findViewById<ImageButton>(R.id.btnInfo)
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
         btnLoadMore = findViewById(R.id.btnLoadMore)
         seekDayNavigator = findViewById(R.id.seekDayNavigator)
@@ -79,6 +80,10 @@ class MainActivity : AppCompatActivity() {
         btnLoadMore.setOnClickListener {
             visibleDayCount += DEFAULT_VISIBLE_DAYS
             loadNotes()
+        }
+
+        btnInfo.setOnClickListener {
+            showAppInfoDialog()
         }
 
         btnSettings.setOnClickListener {
@@ -251,6 +256,28 @@ class MainActivity : AppCompatActivity() {
                 tasks.forEach { it.await() }
             }
         }
+    }
+
+
+    private fun showAppInfoDialog() {
+        val stats = dbHelper.getSummaryStats()
+        val prefs = BackupPreferences(this)
+        val localBackupStatus = if (prefs.hasSuccessfulLocalBackupToday()) "成功（今日）" else "未成功（今日）"
+        val emailBackupStatus = if (prefs.hasSuccessfulEmailBackupToday()) "成功（今日）" else "未成功（今日）"
+
+        val message = buildString {
+            appendLine("记录总天数：${stats.totalDays} 天")
+            appendLine("记录总条数：${stats.totalNotes} 条")
+            appendLine("总字数：${stats.totalChars} 字")
+            appendLine("本地备份是否成功：$localBackupStatus")
+            append("邮箱备份是否成功：$emailBackupStatus")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("程序状态信息")
+            .setMessage(message)
+            .setPositiveButton("知道了", null)
+            .show()
     }
 
     private fun setupDaySeekBar() {
