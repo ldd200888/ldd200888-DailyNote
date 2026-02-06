@@ -22,6 +22,13 @@ class NoteDatabaseHelper(context: Context) :
         }
     }
 
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        // 兼容从旧备份恢复出的数据库结构不完整场景，避免读取设置时因缺表闪退。
+        createNotesTable(db)
+        createSettingsTable(db)
+    }
+
     private fun createNotesTable(db: SQLiteDatabase) {
         db.execSQL(
             """
