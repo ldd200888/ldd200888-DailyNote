@@ -84,6 +84,30 @@ class NoteDatabaseHelper(context: Context) :
         return grouped
     }
 
+
+    fun getSummaryStats(): NoteSummaryStats {
+        readableDatabase.rawQuery(
+            """
+            SELECT
+                COUNT(*) AS total_count,
+                COUNT(DISTINCT DATE($COL_CREATED_AT / 1000, 'unixepoch', 'localtime')) AS total_days,
+                COALESCE(SUM(LENGTH($COL_CONTENT)), 0) AS total_chars
+            FROM $TABLE_NOTES
+            """.trimIndent(),
+            null
+        ).use { cursor ->
+            if (cursor.moveToFirst()) {
+                return NoteSummaryStats(
+                    totalDays = cursor.getInt(cursor.getColumnIndexOrThrow("total_days")),
+                    totalNotes = cursor.getInt(cursor.getColumnIndexOrThrow("total_count")),
+                    totalChars = cursor.getInt(cursor.getColumnIndexOrThrow("total_chars"))
+                )
+            }
+        }
+
+        return NoteSummaryStats()
+    }
+
     companion object {
         const val DATABASE_NAME = "daily_note.db"
         private const val DATABASE_VERSION = 1
@@ -93,3 +117,10 @@ class NoteDatabaseHelper(context: Context) :
         const val COL_CREATED_AT = "created_at"
     }
 }
+
+
+data class NoteSummaryStats(
+    val totalDays: Int = 0,
+    val totalNotes: Int = 0,
+    val totalChars: Int = 0
+)
