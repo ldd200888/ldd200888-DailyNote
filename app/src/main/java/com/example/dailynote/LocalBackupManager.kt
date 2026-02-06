@@ -28,12 +28,87 @@ class LocalBackupManager(private val context: Context) {
         return "${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME"
     }
 
+
+    fun restoreLatestBackupIfExists(): Boolean {
+        val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
+        val latestBackup = findLatestBackup() ?: return false
+
+        return try {
+            dbFile.parentFile?.mkdirs()
+            latestBackup.inputStream().use { input ->
+                dbFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            true
+        } finally {
+            if (latestBackup.parentFile == context.cacheDir && latestBackup.name.startsWith("daily_note_restore_")) {
+                latestBackup.delete()
+            }
+        }
+    }
+
     private fun timestamp(): String {
         return SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     }
 
     private fun randomSuffix(): String {
         return String.format(Locale.US, "%04d", Random.nextInt(10_000))
+    }
+
+
+
+    private fun findLatestBackup(): File? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            findLatestBackupOnAndroidQPlus()
+        } else {
+            findLatestBackupOnLegacyStorage()
+        }
+    }
+
+    private fun findLatestBackupOnAndroidQPlus(): File? {
+        val projection = arrayOf(
+            MediaStore.MediaColumns._ID,
+            MediaStore.MediaColumns.DATE_MODIFIED
+        )
+        val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} = ?"
+        val selectionArgs = arrayOf("${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME/")
+        val sortOrder = "${MediaStore.MediaColumns.DATE_MODIFIED} DESC"
+
+        val latestUri = context.contentResolver.query(
+            MediaStore.Files.getContentUri("external"),
+            projection,
+            selection,
+            selectionArgs,
+            sortOrder
+        )?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null
+            val idIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+            val id = cursor.getLong(idIndex)
+            Uri.withAppendedPath(MediaStore.Files.getContentUri("external"), id.toString())
+        } ?: return null
+
+        val tempFile = File.createTempFile("daily_note_restore_", ".db", context.cacheDir)
+        context.contentResolver.openInputStream(latestUri)?.use { input ->
+            tempFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        } ?: run {
+            tempFile.delete()
+            return null
+        }
+        return tempFile
+    }
+
+    private fun findLatestBackupOnLegacyStorage(): File? {
+        val publicBackupDir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+            PUBLIC_BACKUP_DIR_NAME
+        )
+
+        return publicBackupDir.listFiles { file ->
+            file.isFile && file.extension.equals("db", ignoreCase = true)
+        }?.maxByOrNull { it.lastModified() }
     }
 
     private fun savePublicBackup(backupName: String, dbFile: File) {

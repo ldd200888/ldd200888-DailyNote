@@ -90,6 +90,16 @@ class BackupPreferences(context: Context) {
             .apply()
     }
 
+    fun isFirstLaunchAfterInstall(): Boolean {
+        return prefs.getBoolean(KEY_IS_FIRST_LAUNCH_AFTER_INSTALL, true)
+    }
+
+    fun markFirstLaunchHandled() {
+        prefs.edit()
+            .putBoolean(KEY_IS_FIRST_LAUNCH_AFTER_INSTALL, false)
+            .apply()
+    }
+
     private fun todayKey(): String {
         return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     }
@@ -107,6 +117,7 @@ class BackupPreferences(context: Context) {
         private const val KEY_CUSTOM_THEME_COLOR = "custom_theme_color"
         private const val KEY_BIOMETRIC_LOCK_ENABLED = "biometric_lock_enabled"
         private const val KEY_EXPAND_MODE = "expand_mode"
+        private const val KEY_IS_FIRST_LAUNCH_AFTER_INSTALL = "is_first_launch_after_install"
 
         const val EXPAND_MODE_LATEST_DAY = 0
         const val EXPAND_MODE_ALL_EXPANDED = 1

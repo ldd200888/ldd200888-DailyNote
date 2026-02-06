@@ -47,6 +47,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         ThemeStyleManager.applyCustomColorIfNeeded(this)
 
+        tryRestoreOnFirstLaunch()
+
         dbHelper = NoteDatabaseHelper(this)
         adapter = NoteAdapter(onNoteLongClick = ::showNoteActionDialog)
 
@@ -171,6 +173,24 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         biometricPrompt.authenticate(promptInfo)
+    }
+
+
+    private fun tryRestoreOnFirstLaunch() {
+        val prefs = BackupPreferences(this)
+        if (!prefs.isFirstLaunchAfterInstall()) {
+            return
+        }
+
+        runCatching {
+            LocalBackupManager(applicationContext).restoreLatestBackupIfExists()
+        }.onSuccess { restored ->
+            if (restored) {
+                Toast.makeText(this, "检测到本地备份，已自动恢复", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        prefs.markFirstLaunchHandled()
     }
 
     private fun tryBackupOnOpen() {
