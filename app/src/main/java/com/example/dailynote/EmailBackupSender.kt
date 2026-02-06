@@ -40,6 +40,7 @@ class EmailBackupSender(private val context: Context) {
             put("mail.smtp.port", config.smtpPort.toString())
             put("mail.smtp.connectiontimeout", "10000")
             put("mail.smtp.timeout", "10000")
+            put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3")
             if (useSsl) {
                 put("mail.smtp.ssl.enable", "true")
                 put("mail.smtp.ssl.trust", config.smtpHost)
@@ -101,9 +102,19 @@ class EmailBackupSender(private val context: Context) {
     }
 
     private fun formatSmtpError(error: Exception): String {
-        val causes = generateSequence(error.cause) { it.cause }
-            .map { "${it::class.java.simpleName}: ${it.message.orEmpty()}" }
-            .toList()
+        val causeList = mutableListOf<String>()
+        generateSequence(error.cause) { it.cause }
+            .forEach { causeList.add("${it::class.java.simpleName}: ${it.message.orEmpty()}") }
+
+        if (error is javax.mail.MessagingException) {
+            var next = error.nextException
+            while (next != null) {
+                causeList.add("${next::class.java.simpleName}: ${next.message.orEmpty()}")
+                next = (next as? javax.mail.MessagingException)?.nextException
+            }
+        }
+
+        val causes = causeList.toList()
         val causeText = if (causes.isNotEmpty()) {
             causes.joinToString(separator = " -> ")
         } else {
