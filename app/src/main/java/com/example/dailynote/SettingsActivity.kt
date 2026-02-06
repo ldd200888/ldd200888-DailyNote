@@ -17,7 +17,7 @@ import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
 
-    private val importBackupLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    private val importBackupLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri == null) {
             return@registerForActivityResult
         }
