@@ -19,7 +19,8 @@ class LocalBackupManager(private val context: Context) {
         if (!dbFile.exists()) return null
 
         val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.db"
-        savePublicBackup(backupName, dbFile)
+        val backupPassword = BackupPreferences(context).loadBackupPassword()
+        savePublicBackup(backupName, dbFile, backupPassword)
         trimOldPublicBackups()
         return backupName
     }
@@ -33,14 +34,31 @@ class LocalBackupManager(private val context: Context) {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
         val latestBackup = findLatestBackup() ?: return false
 
+        val backupPassword = BackupPreferences(context).loadBackupPassword()
         return try {
             dbFile.parentFile?.mkdirs()
-            latestBackup.inputStream().use { input ->
-                dbFile.outputStream().use { output ->
-                    input.copyTo(output)
+            if (backupPassword.isBlank()) {
+                latestBackup.inputStream().use { input ->
+                    dbFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            } else {
+                val tempPlain = File.createTempFile("daily_note_plain_", ".db", context.cacheDir)
+                try {
+                    BackupSqlCipher.exportPlaintextDatabase(context, latestBackup, tempPlain, backupPassword)
+                    tempPlain.inputStream().use { input ->
+                        dbFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                } finally {
+                    tempPlain.delete()
                 }
             }
             true
+        } catch (e: Exception) {
+            false
         } finally {
             if (latestBackup.parentFile == context.cacheDir && latestBackup.name.startsWith("daily_note_restore_")) {
                 latestBackup.delete()
@@ -122,7 +140,7 @@ class LocalBackupManager(private val context: Context) {
         }?.maxByOrNull { it.lastModified() }
     }
 
-    private fun savePublicBackup(backupName: String, dbFile: File) {
+    private fun savePublicBackup(backupName: String, dbFile: File, backupPassword: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, backupName)
@@ -132,9 +150,7 @@ class LocalBackupManager(private val context: Context) {
 
             val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), values) ?: return
             context.contentResolver.openOutputStream(uri)?.use { output ->
-                dbFile.inputStream().use { input ->
-                    input.copyTo(output)
-                }
+                writeBackup(dbFile, output, backupPassword)
             } ?: context.contentResolver.delete(uri, null, null)
             return
         }
@@ -145,7 +161,28 @@ class LocalBackupManager(private val context: Context) {
         ).apply { mkdirs() }
 
         val publicBackupFile = File(publicBackupDir, backupName)
-        dbFile.copyTo(publicBackupFile, overwrite = true)
+        publicBackupFile.outputStream().use { output ->
+            writeBackup(dbFile, output, backupPassword)
+        }
+    }
+
+    private fun writeBackup(dbFile: File, output: java.io.OutputStream, backupPassword: String) {
+        if (backupPassword.isBlank()) {
+            dbFile.inputStream().use { input ->
+                input.copyTo(output)
+            }
+            return
+        }
+
+        val encryptedFile = File.createTempFile("daily_note_backup_", ".db", context.cacheDir)
+        try {
+            BackupSqlCipher.exportEncryptedBackup(context, dbFile, encryptedFile, backupPassword)
+            encryptedFile.inputStream().use { input ->
+                input.copyTo(output)
+            }
+        } finally {
+            encryptedFile.delete()
+        }
     }
 
     private fun trimOldPublicBackups() {

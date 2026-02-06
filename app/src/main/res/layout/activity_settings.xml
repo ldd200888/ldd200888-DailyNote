@@ -78,6 +78,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
+            android:text="备份密码（可选）"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/editBackupPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="留空则不加密"
+            android:inputType="textPassword" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="应用配色风格"
             android:textStyle="bold" />
 
