@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -38,6 +39,7 @@ class SettingsActivity : AppCompatActivity() {
         val editSenderPassword = findViewById<EditText>(R.id.editSenderPassword)
         val editRecipientEmail = findViewById<EditText>(R.id.editRecipientEmail)
         val radioGroupColorStyle = findViewById<RadioGroup>(R.id.radioGroupColorStyle)
+        val radioGroupExpandMode = findViewById<RadioGroup>(R.id.radioGroupExpandMode)
         val seekRed = findViewById<SeekBar>(R.id.seekRed)
         val seekGreen = findViewById<SeekBar>(R.id.seekGreen)
         val seekBlue = findViewById<SeekBar>(R.id.seekBlue)
@@ -88,6 +90,12 @@ class SettingsActivity : AppCompatActivity() {
             else -> radioGroupColorStyle.check(R.id.radioStylePurple)
         }
 
+        when (prefs.loadExpandMode()) {
+            BackupPreferences.EXPAND_MODE_ALL_EXPANDED -> radioGroupExpandMode.check(R.id.radioExpandAll)
+            BackupPreferences.EXPAND_MODE_ALL_COLLAPSED -> radioGroupExpandMode.check(R.id.radioCollapseAll)
+            else -> radioGroupExpandMode.check(R.id.radioExpandLatest)
+        }
+
         val updateCustomColorVisibility = {
             val visible = radioGroupColorStyle.checkedRadioButtonId == R.id.radioStyleCustom
             val visibility = if (visible) View.VISIBLE else View.GONE
@@ -132,11 +140,17 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             val selectedColor = Color.rgb(seekRed.progress, seekGreen.progress, seekBlue.progress)
+            val selectedExpandMode = when (radioGroupExpandMode.checkedRadioButtonId) {
+                R.id.radioExpandAll -> BackupPreferences.EXPAND_MODE_ALL_EXPANDED
+                R.id.radioCollapseAll -> BackupPreferences.EXPAND_MODE_ALL_COLLAPSED
+                else -> BackupPreferences.EXPAND_MODE_LATEST_DAY
+            }
 
             prefs.saveConfig(config)
             prefs.saveColorStyle(selectedStyle)
             prefs.saveCustomThemeColor(selectedColor)
             prefs.setBiometricLockEnabled(switchBiometricLock.isChecked)
+            prefs.saveExpandMode(selectedExpandMode)
             Toast.makeText(this, "设置已保存", Toast.LENGTH_SHORT).show()
             finish()
         }

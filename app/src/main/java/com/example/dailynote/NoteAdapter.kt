@@ -16,6 +16,10 @@ class NoteAdapter(
     private val onNoteLongClick: (Note) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    interface HeaderPositionListener {
+        fun onHeaderPositionsChanged(dayHeaders: List<String>)
+    }
+
     private val items = mutableListOf<NoteListItem>()
     private val groupedNotes = linkedMapOf<String, List<Note>>()
     private val expandedDays = linkedSetOf<String>()
@@ -25,7 +29,12 @@ class NoteAdapter(
     private val weekFormatter = SimpleDateFormat("EEEE", Locale.CHINA)
     private val todayText = dayFormatter.format(Date())
 
-    fun submit(grouped: Map<String, List<Note>>) {
+    private var expandMode = BackupPreferences.EXPAND_MODE_LATEST_DAY
+    private var headerPositionListener: HeaderPositionListener? = null
+
+    fun submit(grouped: Map<String, List<Note>>, preferredExpandMode: Int = expandMode) {
+        val modeChanged = preferredExpandMode != expandMode
+        expandMode = preferredExpandMode
         groupedNotes.clear()
         groupedNotes.putAll(grouped)
 
@@ -33,17 +42,15 @@ class NoteAdapter(
             expandedDays.clear()
             items.clear()
             notifyDataSetChanged()
+            headerPositionListener?.onHeaderPositionsChanged(emptyList())
             return
         }
 
         val validDays = groupedNotes.keys.toSet()
         expandedDays.retainAll(validDays)
 
-        if (todayText in validDays && expandedDays.isEmpty()) {
-            expandedDays.add(todayText)
-        }
-        if (todayText !in validDays && expandedDays.isEmpty()) {
-            expandedDays.add(groupedNotes.keys.first())
+        if (modeChanged || expandedDays.isEmpty()) {
+            applyExpandMode(validDays)
         }
 
         rebuildItems()
@@ -76,6 +83,31 @@ class NoteAdapter(
         }
     }
 
+    fun setHeaderPositionListener(listener: HeaderPositionListener?) {
+        headerPositionListener = listener
+    }
+
+    fun getDayHeaders(): List<String> = groupedNotes.keys.toList()
+
+    fun getHeaderAdapterPosition(day: String): Int {
+        return items.indexOfFirst { it is NoteListItem.Header && it.date == day }
+    }
+
+    private fun applyExpandMode(validDays: Set<String>) {
+        expandedDays.clear()
+        when (expandMode) {
+            BackupPreferences.EXPAND_MODE_ALL_EXPANDED -> expandedDays.addAll(validDays)
+            BackupPreferences.EXPAND_MODE_ALL_COLLAPSED -> Unit
+            else -> {
+                if (todayText in validDays) {
+                    expandedDays.add(todayText)
+                } else {
+                    groupedNotes.keys.firstOrNull()?.let(expandedDays::add)
+                }
+            }
+        }
+    }
+
     private fun rebuildItems() {
         items.clear()
         groupedNotes.forEach { (day, dayNotes) ->
@@ -88,6 +120,7 @@ class NoteAdapter(
             }
         }
         notifyDataSetChanged()
+        headerPositionListener?.onHeaderPositionsChanged(groupedNotes.keys.toList())
     }
 
     inner class HeaderHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

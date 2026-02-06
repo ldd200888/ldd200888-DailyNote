@@ -54,6 +54,16 @@ class BackupPreferences(context: Context) {
         return prefs.getBoolean(KEY_BIOMETRIC_LOCK_ENABLED, false)
     }
 
+    fun loadExpandMode(): Int {
+        return prefs.getInt(KEY_EXPAND_MODE, EXPAND_MODE_LATEST_DAY)
+    }
+
+    fun saveExpandMode(mode: Int) {
+        prefs.edit()
+            .putInt(KEY_EXPAND_MODE, mode)
+            .apply()
+    }
+
     fun setBiometricLockEnabled(enabled: Boolean) {
         prefs.edit()
             .putBoolean(KEY_BIOMETRIC_LOCK_ENABLED, enabled)
@@ -96,5 +106,10 @@ class BackupPreferences(context: Context) {
         private const val KEY_COLOR_STYLE = "color_style"
         private const val KEY_CUSTOM_THEME_COLOR = "custom_theme_color"
         private const val KEY_BIOMETRIC_LOCK_ENABLED = "biometric_lock_enabled"
+        private const val KEY_EXPAND_MODE = "expand_mode"
+
+        const val EXPAND_MODE_LATEST_DAY = 0
+        const val EXPAND_MODE_ALL_EXPANDED = 1
+        const val EXPAND_MODE_ALL_COLLAPSED = 2
     }
 }
