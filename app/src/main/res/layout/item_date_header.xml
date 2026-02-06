@@ -38,8 +38,9 @@
 
     <ImageView
         android:id="@+id/imageExpand"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
         android:contentDescription="展开或收起"
         android:src="@android:drawable/arrow_down_float" />
 

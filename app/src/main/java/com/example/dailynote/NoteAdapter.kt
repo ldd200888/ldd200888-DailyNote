@@ -114,7 +114,7 @@ class NoteAdapter(
             val date = parseDate(dayText) ?: return dayText
             val weekText = weekFormatter.format(date)
             val lunarText = buildLunarText(date)
-            return "$dayText  $weekText  $lunarText"
+            return "$dayText  $weekText\n农历：$lunarText"
         }
 
         private fun parseDate(dayText: String): Date? {
@@ -129,11 +129,20 @@ class NoteAdapter(
             val lunarCalendar = ChineseCalendar().apply {
                 timeInMillis = date.time
             }
+            val zodiacYear = zodiacName(lunarCalendar.get(ChineseCalendar.YEAR))
             val month = lunarCalendar.get(ChineseCalendar.MONTH) + 1
             val day = lunarCalendar.get(ChineseCalendar.DAY_OF_MONTH)
             val isLeapMonth = lunarCalendar.get(ChineseCalendar.IS_LEAP_MONTH) == 1
             val monthText = if (isLeapMonth) "闰${lunarMonthName(month)}" else lunarMonthName(month)
-            return "农历$monthText${lunarDayName(day)}"
+            return "${zodiacYear}年${monthText}${lunarDayName(day)}"
+        }
+
+        private fun zodiacName(lunarYearInCycle: Int): String {
+            val zodiacNames = arrayOf(
+                "鼠", "牛", "虎", "兔", "龙", "蛇",
+                "马", "羊", "猴", "鸡", "狗", "猪"
+            )
+            return zodiacNames[(lunarYearInCycle - 1).mod(zodiacNames.size)]
         }
 
         private fun lunarMonthName(month: Int): String {
