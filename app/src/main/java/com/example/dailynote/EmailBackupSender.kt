@@ -24,7 +24,8 @@ class EmailBackupSender(private val context: Context) {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
         if (!dbFile.exists()) return
 
-        val backupFile = File(context.cacheDir, "email_backup_${timestamp()}_${randomSuffix()}.db")
+        val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.db"
+        val backupFile = File(context.cacheDir, backupName)
         dbFile.copyTo(backupFile, overwrite = true)
 
         val props = Properties().apply {
