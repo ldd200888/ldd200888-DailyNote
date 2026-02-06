@@ -230,6 +230,7 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this@MainActivity, "今日本地备份成功", Toast.LENGTH_SHORT).show()
                         }
                     }.onFailure {
+                        prefs.markLocalBackupFailure(it.message ?: "未知原因")
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, "今日本地备份失败", Toast.LENGTH_SHORT).show()
                         }
@@ -247,6 +248,7 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this@MainActivity, "今日邮箱备份成功", Toast.LENGTH_SHORT).show()
                         }
                     }.onFailure {
+                        prefs.markEmailBackupFailure(it.message ?: "未知原因")
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, "今日邮箱备份失败", Toast.LENGTH_SHORT).show()
                         }
@@ -264,13 +266,17 @@ class MainActivity : AppCompatActivity() {
         val prefs = BackupPreferences(this)
         val localBackupStatus = if (prefs.hasSuccessfulLocalBackupToday()) "成功（今日）" else "未成功（今日）"
         val emailBackupStatus = if (prefs.hasSuccessfulEmailBackupToday()) "成功（今日）" else "未成功（今日）"
+        val localBackupFailureReason = prefs.lastLocalBackupFailureReason().ifBlank { "暂无" }
+        val emailBackupFailureReason = prefs.lastEmailBackupFailureReason().ifBlank { "暂无" }
 
         val message = buildString {
             appendLine("记录总天数：${stats.totalDays} 天")
             appendLine("记录总条数：${stats.totalNotes} 条")
             appendLine("总字数：${stats.totalChars} 字")
             appendLine("本地备份是否成功：$localBackupStatus")
-            append("邮箱备份是否成功：$emailBackupStatus")
+            appendLine("邮箱备份是否成功：$emailBackupStatus")
+            appendLine("本地备份失败原因：$localBackupFailureReason")
+            append("邮箱备份失败原因：$emailBackupFailureReason")
         }
 
         AlertDialog.Builder(this)
