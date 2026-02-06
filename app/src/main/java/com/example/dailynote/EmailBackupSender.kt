@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.Properties
+import kotlin.random.Random
 import javax.activation.DataHandler
 import javax.activation.FileDataSource
 import javax.mail.Message
@@ -23,7 +24,7 @@ class EmailBackupSender(private val context: Context) {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
         if (!dbFile.exists()) return
 
-        val backupFile = File(context.cacheDir, "email_backup_${timestamp()}.db")
+        val backupFile = File(context.cacheDir, "email_backup_${timestamp()}_${randomSuffix()}.db")
         dbFile.copyTo(backupFile, overwrite = true)
 
         val props = Properties().apply {
@@ -56,6 +57,10 @@ class EmailBackupSender(private val context: Context) {
 
     private fun timestamp(): String {
         return SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    }
+
+    private fun randomSuffix(): String {
+        return String.format(Locale.US, "%04d", Random.nextInt(10_000))
     }
 
     private fun buildContent(dbFile: File): MimeMultipart {

@@ -10,6 +10,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.random.Random
 
 class LocalBackupManager(private val context: Context) {
 
@@ -17,7 +18,7 @@ class LocalBackupManager(private val context: Context) {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
         if (!dbFile.exists()) return null
 
-        val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}.db"
+        val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.db"
         savePublicBackup(backupName, dbFile)
         trimOldPublicBackups()
         return backupName
@@ -29,6 +30,10 @@ class LocalBackupManager(private val context: Context) {
 
     private fun timestamp(): String {
         return SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    }
+
+    private fun randomSuffix(): String {
+        return String.format(Locale.US, "%04d", Random.nextInt(10_000))
     }
 
     private fun savePublicBackup(backupName: String, dbFile: File) {
