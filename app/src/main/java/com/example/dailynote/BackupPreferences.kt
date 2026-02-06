@@ -37,6 +37,14 @@ class BackupPreferences(private val context: Context) {
         saveString(KEY_COLOR_STYLE, style)
     }
 
+    fun loadBackupPassword(): String {
+        return loadString(KEY_BACKUP_PASSWORD, "")
+    }
+
+    fun saveBackupPassword(password: String) {
+        saveString(KEY_BACKUP_PASSWORD, password)
+    }
+
     fun loadCustomThemeColor(): Int {
         return loadInt(KEY_CUSTOM_THEME_COLOR, Color.parseColor("#6750A4"))
     }
@@ -154,6 +162,7 @@ class BackupPreferences(private val context: Context) {
         private const val KEY_BIOMETRIC_LOCK_ENABLED = "biometric_lock_enabled"
         private const val KEY_EXPAND_MODE = "expand_mode"
         private const val KEY_IS_FIRST_LAUNCH_AFTER_INSTALL = "is_first_launch_after_install"
+        private const val KEY_BACKUP_PASSWORD = "backup_password"
 
         const val EXPAND_MODE_LATEST_DAY = 0
         const val EXPAND_MODE_ALL_EXPANDED = 1

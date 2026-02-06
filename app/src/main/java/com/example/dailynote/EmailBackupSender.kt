@@ -26,7 +26,12 @@ class EmailBackupSender(private val context: Context) {
 
         val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.db"
         val backupFile = File(context.cacheDir, backupName)
-        dbFile.copyTo(backupFile, overwrite = true)
+        val backupPassword = BackupPreferences(context).loadBackupPassword()
+        if (backupPassword.isBlank()) {
+            dbFile.copyTo(backupFile, overwrite = true)
+        } else {
+            BackupSqlCipher.exportEncryptedBackup(context, dbFile, backupFile, backupPassword)
+        }
 
         val props = Properties().apply {
             put("mail.smtp.auth", "true")

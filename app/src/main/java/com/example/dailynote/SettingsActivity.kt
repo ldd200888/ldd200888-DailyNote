@@ -42,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
         val editSenderEmail = findViewById<EditText>(R.id.editSenderEmail)
         val editSenderPassword = findViewById<EditText>(R.id.editSenderPassword)
         val editRecipientEmail = findViewById<EditText>(R.id.editRecipientEmail)
+        val editBackupPassword = findViewById<EditText>(R.id.editBackupPassword)
         val radioGroupColorStyle = findViewById<RadioGroup>(R.id.radioGroupColorStyle)
         val radioGroupExpandMode = findViewById<RadioGroup>(R.id.radioGroupExpandMode)
         val seekRed = findViewById<SeekBar>(R.id.seekRed)
@@ -61,6 +62,7 @@ class SettingsActivity : AppCompatActivity() {
         editSenderEmail.setText(current.senderEmail)
         editSenderPassword.setText(current.senderPassword)
         editRecipientEmail.setText(current.recipientEmail)
+        editBackupPassword.setText(prefs.loadBackupPassword())
         switchBiometricLock.isChecked = prefs.isBiometricLockEnabled()
 
         val currentCustomColor = prefs.loadCustomThemeColor()
@@ -198,6 +200,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             prefs.saveConfig(config)
+            prefs.saveBackupPassword(editBackupPassword.text.toString().trim())
             prefs.saveColorStyle(selectedStyle)
             prefs.saveCustomThemeColor(selectedColor)
             prefs.setBiometricLockEnabled(switchBiometricLock.isChecked)
@@ -210,6 +213,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun restoreDatabaseFromUri(uri: Uri) {
         val dbFile = getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
         val tempFile = File(cacheDir, "import_restore.db")
+        val backupPassword = BackupPreferences(this).loadBackupPassword()
 
         runCatching {
             contentResolver.openInputStream(uri)?.use { input ->
@@ -229,9 +233,23 @@ class SettingsActivity : AppCompatActivity() {
             File(dbFile.absolutePath + "-shm").delete()
             File(dbFile.absolutePath + "-journal").delete()
 
-            tempFile.inputStream().use { input ->
-                dbFile.outputStream().use { output ->
-                    input.copyTo(output)
+            if (backupPassword.isBlank()) {
+                tempFile.inputStream().use { input ->
+                    dbFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            } else {
+                val tempPlain = File(cacheDir, "import_plain.db")
+                try {
+                    BackupSqlCipher.exportPlaintextDatabase(this, tempFile, tempPlain, backupPassword)
+                    tempPlain.inputStream().use { input ->
+                        dbFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                } finally {
+                    tempPlain.delete()
                 }
             }
         }.onSuccess {
