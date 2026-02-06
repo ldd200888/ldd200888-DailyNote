@@ -12,9 +12,20 @@ class NoteDatabaseHelper(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     override fun onCreate(db: SQLiteDatabase) {
+        createNotesTable(db)
+        createSettingsTable(db)
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) {
+            createSettingsTable(db)
+        }
+    }
+
+    private fun createNotesTable(db: SQLiteDatabase) {
         db.execSQL(
             """
-            CREATE TABLE $TABLE_NOTES (
+            CREATE TABLE IF NOT EXISTS $TABLE_NOTES (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 content TEXT NOT NULL,
                 created_at INTEGER NOT NULL
@@ -23,9 +34,15 @@ class NoteDatabaseHelper(context: Context) :
         )
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_NOTES")
-        onCreate(db)
+    private fun createSettingsTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS $TABLE_SETTINGS (
+                setting_key TEXT PRIMARY KEY,
+                setting_value TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
     }
 
     fun addNote(content: String) {
@@ -108,13 +125,47 @@ class NoteDatabaseHelper(context: Context) :
         return NoteSummaryStats()
     }
 
+    fun getSetting(key: String): String? {
+        readableDatabase.query(
+            TABLE_SETTINGS,
+            arrayOf(COL_SETTING_VALUE),
+            "$COL_SETTING_KEY=?",
+            arrayOf(key),
+            null,
+            null,
+            null,
+            "1"
+        ).use { cursor ->
+            if (cursor.moveToFirst()) {
+                return cursor.getString(cursor.getColumnIndexOrThrow(COL_SETTING_VALUE))
+            }
+        }
+        return null
+    }
+
+    fun putSetting(key: String, value: String) {
+        val values = ContentValues().apply {
+            put(COL_SETTING_KEY, key)
+            put(COL_SETTING_VALUE, value)
+        }
+        writableDatabase.insertWithOnConflict(
+            TABLE_SETTINGS,
+            null,
+            values,
+            SQLiteDatabase.CONFLICT_REPLACE
+        )
+    }
+
     companion object {
         const val DATABASE_NAME = "daily_note.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
         const val TABLE_NOTES = "notes"
+        const val TABLE_SETTINGS = "app_settings"
         const val COL_ID = "id"
         const val COL_CONTENT = "content"
         const val COL_CREATED_AT = "created_at"
+        const val COL_SETTING_KEY = "setting_key"
+        const val COL_SETTING_VALUE = "setting_value"
     }
 }
 
