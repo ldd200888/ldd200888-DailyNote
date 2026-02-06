@@ -18,7 +18,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
@@ -165,27 +167,54 @@ class MainActivity : AppCompatActivity() {
     private fun tryBackupOnOpen() {
         val prefs = BackupPreferences(this)
         val config = prefs.loadConfig()
+        val canDoEmailBackup = config.senderEmail.isNotBlank() &&
+            config.senderPassword.isNotBlank() &&
+            config.recipientEmail.isNotBlank()
 
-        if (config.senderEmail.isBlank() || config.senderPassword.isBlank() || config.recipientEmail.isBlank()) {
-            return
-        }
+        val shouldDoLocalBackup = !prefs.hasSuccessfulLocalBackupToday()
+        val shouldDoEmailBackup = canDoEmailBackup && !prefs.hasSuccessfulEmailBackupToday()
 
-        if (prefs.hasSuccessfulBackupToday()) {
+        if (!shouldDoLocalBackup && !shouldDoEmailBackup) {
             return
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
-            runCatching {
-                EmailBackupSender(applicationContext).sendDatabaseBackup(config)
-            }.onSuccess {
-                prefs.markBackupSuccessToday()
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "今日备份成功", Toast.LENGTH_SHORT).show()
+            supervisorScope {
+                val tasks = mutableListOf(async {
+                    if (!shouldDoLocalBackup) return@async
+
+                    runCatching {
+                        LocalBackupManager(applicationContext).backupDatabase() ?: error("数据库文件不存在")
+                    }.onSuccess {
+                        prefs.markLocalBackupSuccessToday()
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@MainActivity, "今日本地备份成功", Toast.LENGTH_SHORT).show()
+                        }
+                    }.onFailure {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@MainActivity, "今日本地备份失败", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                })
+
+                tasks += async {
+                    if (!shouldDoEmailBackup) return@async
+
+                    runCatching {
+                        EmailBackupSender(applicationContext).sendDatabaseBackup(config)
+                    }.onSuccess {
+                        prefs.markEmailBackupSuccessToday()
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@MainActivity, "今日邮箱备份成功", Toast.LENGTH_SHORT).show()
+                        }
+                    }.onFailure {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@MainActivity, "今日邮箱备份失败", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
-            }.onFailure {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "今日备份失败", Toast.LENGTH_SHORT).show()
-                }
+
+                tasks.forEach { it.await() }
             }
         }
     }

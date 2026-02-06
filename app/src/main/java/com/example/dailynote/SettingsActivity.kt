@@ -13,7 +13,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
-import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -106,9 +105,8 @@ class SettingsActivity : AppCompatActivity() {
             importBackupLauncher.launch(arrayOf("application/octet-stream", "*/*"))
         }
 
-        val backupDir = File(filesDir, "backups")
-        val backupPathText = runCatching { backupDir.canonicalPath }.getOrElse { backupDir.absolutePath }
-        textLocalBackupPath.text = "本地保存文件路径：$backupPathText"
+        val backupPathText = LocalBackupManager(this).publicBackupPathDescription()
+        textLocalBackupPath.text = "本地保存文件路径（卸载后仍保留）：$backupPathText"
 
         btnSave.setOnClickListener {
             val port = editSmtpPort.text.toString().toIntOrNull()
