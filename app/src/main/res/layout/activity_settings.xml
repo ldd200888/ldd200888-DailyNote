@@ -235,6 +235,20 @@
             android:layout_marginTop="10dp"
             android:text="导入恢复（选择备份文件）" />
 
+        <Button
+            android:id="@+id/btnManualLocalBackup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="手动本地备份" />
+
+        <Button
+            android:id="@+id/btnManualEmailBackup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="手动邮箱备份" />
+
         <TextView
             android:id="@+id/textLocalBackupPath"
             android:layout_width="match_parent"
