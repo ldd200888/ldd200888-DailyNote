@@ -123,16 +123,23 @@ class SettingsActivity : AppCompatActivity() {
 
         btnManualLocalBackup.setOnClickListener {
             lifecycleScope.launch(Dispatchers.IO) {
-                val backupName = runCatching {
+                val result = runCatching {
                     LocalBackupManager(applicationContext).backupDatabase()
-                }.getOrNull()
+                }
 
                 withContext(Dispatchers.Main) {
-                    if (backupName == null) {
+                    val prefs = BackupPreferences(this@SettingsActivity)
+                    result.onSuccess { backupName ->
+                        if (backupName == null) {
+                            prefs.markLocalBackupFailure("未找到数据库文件")
+                            Toast.makeText(this@SettingsActivity, "本地备份失败，请稍后重试", Toast.LENGTH_SHORT).show()
+                        } else {
+                            prefs.markLocalBackupSuccessToday()
+                            Toast.makeText(this@SettingsActivity, "本地备份成功：$backupName", Toast.LENGTH_SHORT).show()
+                        }
+                    }.onFailure {
+                        prefs.markLocalBackupFailure(it.message ?: "未知原因")
                         Toast.makeText(this@SettingsActivity, "本地备份失败，请稍后重试", Toast.LENGTH_SHORT).show()
-                    } else {
-                        BackupPreferences(this@SettingsActivity).markLocalBackupSuccessToday()
-                        Toast.makeText(this@SettingsActivity, "本地备份成功：$backupName", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -156,10 +163,12 @@ class SettingsActivity : AppCompatActivity() {
                 }
 
                 withContext(Dispatchers.Main) {
+                    val prefs = BackupPreferences(this@SettingsActivity)
                     result.onSuccess {
-                        BackupPreferences(this@SettingsActivity).markEmailBackupSuccessToday()
+                        prefs.markEmailBackupSuccessToday()
                         Toast.makeText(this@SettingsActivity, "邮箱备份成功", Toast.LENGTH_SHORT).show()
                     }.onFailure {
+                        prefs.markEmailBackupFailure(it.message ?: "未知原因")
                         Toast.makeText(this@SettingsActivity, "邮箱备份失败：${it.message}", Toast.LENGTH_LONG).show()
                     }
                 }

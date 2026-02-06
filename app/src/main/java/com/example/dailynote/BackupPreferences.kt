@@ -75,6 +75,7 @@ class BackupPreferences(private val context: Context) {
 
     fun markEmailBackupSuccessToday() {
         saveString(KEY_LAST_EMAIL_SUCCESS_DATE, todayKey())
+        saveString(KEY_LAST_EMAIL_FAILURE_REASON, "")
     }
 
     fun hasSuccessfulLocalBackupToday(): Boolean {
@@ -83,6 +84,23 @@ class BackupPreferences(private val context: Context) {
 
     fun markLocalBackupSuccessToday() {
         saveString(KEY_LAST_LOCAL_SUCCESS_DATE, todayKey())
+        saveString(KEY_LAST_LOCAL_FAILURE_REASON, "")
+    }
+
+    fun markEmailBackupFailure(reason: String) {
+        saveString(KEY_LAST_EMAIL_FAILURE_REASON, reason)
+    }
+
+    fun markLocalBackupFailure(reason: String) {
+        saveString(KEY_LAST_LOCAL_FAILURE_REASON, reason)
+    }
+
+    fun lastEmailBackupFailureReason(): String {
+        return loadString(KEY_LAST_EMAIL_FAILURE_REASON, "")
+    }
+
+    fun lastLocalBackupFailureReason(): String {
+        return loadString(KEY_LAST_LOCAL_FAILURE_REASON, "")
     }
 
     fun isFirstLaunchAfterInstall(): Boolean {
@@ -157,6 +175,8 @@ class BackupPreferences(private val context: Context) {
         private const val KEY_RECIPIENT_EMAIL = "recipient_email"
         private const val KEY_LAST_EMAIL_SUCCESS_DATE = "last_email_success_date"
         private const val KEY_LAST_LOCAL_SUCCESS_DATE = "last_local_success_date"
+        private const val KEY_LAST_EMAIL_FAILURE_REASON = "last_email_failure_reason"
+        private const val KEY_LAST_LOCAL_FAILURE_REASON = "last_local_failure_reason"
         private const val KEY_COLOR_STYLE = "color_style"
         private const val KEY_CUSTOM_THEME_COLOR = "custom_theme_color"
         private const val KEY_BIOMETRIC_LOCK_ENABLED = "biometric_lock_enabled"
