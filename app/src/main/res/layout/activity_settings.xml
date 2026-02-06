@@ -180,6 +180,38 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
+            android:text="日记分组收缩模式"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/radioGroupExpandMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/radioExpandLatest"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="最新一天展开" />
+
+            <RadioButton
+                android:id="@+id/radioExpandAll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="全部展开" />
+
+            <RadioButton
+                android:id="@+id/radioCollapseAll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="全部收缩" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="进入应用认证"
             android:textStyle="bold" />
 

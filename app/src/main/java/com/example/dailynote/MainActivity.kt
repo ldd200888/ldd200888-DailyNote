@@ -7,6 +7,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -30,7 +31,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var editNote: EditText
     private lateinit var btnLoadMore: Button
+    private lateinit var seekDayNavigator: SeekBar
+    private lateinit var recyclerNotes: RecyclerView
     private var visibleDayCount = DEFAULT_VISIBLE_DAYS
+    private var expandMode = BackupPreferences.EXPAND_MODE_LATEST_DAY
+    private var isSyncingDaySeekBar = false
     private var currentColorStyle = ThemeStyleManager.STYLE_PURPLE
     private var currentCustomColor = 0
     private var hasAuthenticated = false
@@ -49,10 +54,12 @@ class MainActivity : AppCompatActivity() {
         val btnSave = findViewById<Button>(R.id.btnSave)
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
         btnLoadMore = findViewById(R.id.btnLoadMore)
-        val recyclerNotes = findViewById<RecyclerView>(R.id.recyclerNotes)
+        seekDayNavigator = findViewById(R.id.seekDayNavigator)
+        recyclerNotes = findViewById(R.id.recyclerNotes)
 
         recyclerNotes.layoutManager = LinearLayoutManager(this)
         recyclerNotes.adapter = adapter
+        setupDaySeekBar()
 
         btnSave.setOnClickListener {
             val text = editNote.text.toString().trim()
@@ -79,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         currentColorStyle = prefs.loadColorStyle()
         currentCustomColor = prefs.loadCustomThemeColor()
         isBiometricLockEnabled = prefs.isBiometricLockEnabled()
+        expandMode = prefs.loadExpandMode()
 
         if (isBiometricLockEnabled) {
             authenticateWithBiometric()
@@ -113,6 +121,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        expandMode = prefs.loadExpandMode()
         if (hasAuthenticated) {
             loadNotes()
         }
@@ -219,6 +228,40 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupDaySeekBar() {
+        adapter.setHeaderPositionListener(object : NoteAdapter.HeaderPositionListener {
+            override fun onHeaderPositionsChanged(dayHeaders: List<String>) {
+                isSyncingDaySeekBar = true
+                seekDayNavigator.max = if (dayHeaders.isEmpty()) 0 else dayHeaders.lastIndex
+                seekDayNavigator.progress = 0
+                seekDayNavigator.visibility = if (dayHeaders.size > 1) View.VISIBLE else View.GONE
+                isSyncingDaySeekBar = false
+            }
+        })
+
+        seekDayNavigator.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (!fromUser || isSyncingDaySeekBar) {
+                    return
+                }
+                val days = adapter.getDayHeaders()
+                if (days.isEmpty()) {
+                    return
+                }
+                val safeIndex = progress.coerceIn(0, days.lastIndex)
+                val targetDay = days[safeIndex]
+                val position = adapter.getHeaderAdapterPosition(targetDay)
+                if (position >= 0) {
+                    recyclerNotes.scrollToPosition(position)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+    }
+
     private fun showNoteActionDialog(note: Note) {
         val dialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.dialog_note_actions, null)
@@ -266,7 +309,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadNotes() {
         val grouped = dbHelper.getNotesGroupedByDay(visibleDayCount)
-        adapter.submit(grouped)
+        adapter.submit(grouped, expandMode)
 
         val allDayCount = dbHelper.getNotesGroupedByDay().size
         btnLoadMore.visibility = if (allDayCount > visibleDayCount) View.VISIBLE else View.GONE
