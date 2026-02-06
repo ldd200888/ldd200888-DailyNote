@@ -1,6 +1,7 @@
 package com.example.dailynote
 
 import android.content.Context
+import android.util.Log
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -66,6 +67,10 @@ class EmailBackupSender(private val context: Context) {
 
         try {
             Transport.send(message)
+        } catch (e: Exception) {
+            val detail = formatSmtpError(e)
+            Log.e(TAG, detail, e)
+            throw RuntimeException(detail, e)
         } finally {
             backupFile.delete()
         }
@@ -95,4 +100,26 @@ class EmailBackupSender(private val context: Context) {
         }
     }
 
+    private fun formatSmtpError(error: Exception): String {
+        val causes = generateSequence(error.cause) { it.cause }
+            .map { "${it::class.java.simpleName}: ${it.message.orEmpty()}" }
+            .toList()
+        val causeText = if (causes.isNotEmpty()) {
+            causes.joinToString(separator = " -> ")
+        } else {
+            "无"
+        }
+        return buildString {
+            append("SMTP发送失败：")
+            append(error::class.java.simpleName)
+            append(": ")
+            append(error.message.orEmpty())
+            append(" | 根因：")
+            append(causeText)
+        }
+    }
+
+    companion object {
+        private const val TAG = "EmailBackupSender"
+    }
 }
