@@ -18,7 +18,7 @@ class LocalBackupManager(private val context: Context) {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
         if (!dbFile.exists()) return null
 
-        val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.db"
+        val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.zip"
         val backupPassword = BackupPreferences(context).loadBackupPassword()
         savePublicBackup(backupName, dbFile, backupPassword)
         trimOldPublicBackups()
@@ -37,25 +37,7 @@ class LocalBackupManager(private val context: Context) {
         val backupPassword = BackupPreferences(context).loadBackupPassword()
         return try {
             dbFile.parentFile?.mkdirs()
-            if (backupPassword.isBlank()) {
-                latestBackup.inputStream().use { input ->
-                    dbFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-            } else {
-                val tempPlain = File.createTempFile("daily_note_plain_", ".db", context.cacheDir)
-                try {
-                    BackupSqlCipher.exportPlaintextDatabase(context, latestBackup, tempPlain, backupPassword)
-                    tempPlain.inputStream().use { input ->
-                        dbFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                } finally {
-                    tempPlain.delete()
-                }
-            }
+            BackupZipUtils.extractEncryptedZip(latestBackup, dbFile, backupPassword)
             true
         } catch (e: Exception) {
             false
@@ -107,7 +89,7 @@ class LocalBackupManager(private val context: Context) {
 
             do {
                 val displayName = cursor.getString(nameIndex).orEmpty()
-                if (!displayName.endsWith(".db", ignoreCase = true)) {
+                if (!displayName.endsWith(".zip", ignoreCase = true)) {
                     continue
                 }
                 val id = cursor.getLong(idIndex)
@@ -117,7 +99,7 @@ class LocalBackupManager(private val context: Context) {
             null
         } ?: return null
 
-        val tempFile = File.createTempFile("daily_note_restore_", ".db", context.cacheDir)
+        val tempFile = File.createTempFile("daily_note_restore_", ".zip", context.cacheDir)
         context.contentResolver.openInputStream(latestUri)?.use { input ->
             tempFile.outputStream().use { output ->
                 input.copyTo(output)
@@ -136,7 +118,7 @@ class LocalBackupManager(private val context: Context) {
         )
 
         return publicBackupDir.listFiles { file ->
-            file.isFile && file.extension.equals("db", ignoreCase = true)
+            file.isFile && file.extension.equals("zip", ignoreCase = true)
         }?.maxByOrNull { it.lastModified() }
     }
 
@@ -144,7 +126,7 @@ class LocalBackupManager(private val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, backupName)
-                put(MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream")
+                put(MediaStore.MediaColumns.MIME_TYPE, "application/zip")
                 put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME/")
             }
 
@@ -167,22 +149,7 @@ class LocalBackupManager(private val context: Context) {
     }
 
     private fun writeBackup(dbFile: File, output: java.io.OutputStream, backupPassword: String) {
-        if (backupPassword.isBlank()) {
-            dbFile.inputStream().use { input ->
-                input.copyTo(output)
-            }
-            return
-        }
-
-        val encryptedFile = File.createTempFile("daily_note_backup_", ".db", context.cacheDir)
-        try {
-            BackupSqlCipher.exportEncryptedBackup(context, dbFile, encryptedFile, backupPassword)
-            encryptedFile.inputStream().use { input ->
-                input.copyTo(output)
-            }
-        } finally {
-            encryptedFile.delete()
-        }
+        BackupZipUtils.writeEncryptedZip(dbFile, output, backupPassword)
     }
 
     private fun trimOldPublicBackups() {
@@ -228,7 +195,7 @@ class LocalBackupManager(private val context: Context) {
         )
 
         val backups = publicBackupDir.listFiles { file ->
-            file.isFile && file.extension.equals("db", ignoreCase = true)
+            file.isFile && file.extension.equals("zip", ignoreCase = true)
         }?.sortedByDescending { it.lastModified() } ?: return
 
         if (backups.size <= MAX_BACKUP_FILES) return
