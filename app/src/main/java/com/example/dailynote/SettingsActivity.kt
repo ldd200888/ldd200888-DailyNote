@@ -13,7 +13,11 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import androidx.lifecycle.lifecycleScope
 import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -47,6 +51,8 @@ class SettingsActivity : AppCompatActivity() {
         val viewColorPreview = findViewById<View>(R.id.viewColorPreview)
         val btnSave = findViewById<Button>(R.id.btnSaveConfig)
         val btnImportRestore = findViewById<Button>(R.id.btnImportRestore)
+        val btnManualLocalBackup = findViewById<Button>(R.id.btnManualLocalBackup)
+        val btnManualEmailBackup = findViewById<Button>(R.id.btnManualEmailBackup)
         val textLocalBackupPath = findViewById<TextView>(R.id.textLocalBackupPath)
         val switchBiometricLock = findViewById<SwitchCompat>(R.id.switchBiometricLock)
 
@@ -111,6 +117,51 @@ class SettingsActivity : AppCompatActivity() {
 
         btnImportRestore.setOnClickListener {
             importBackupLauncher.launch(arrayOf("application/octet-stream", "*/*"))
+        }
+
+        btnManualLocalBackup.setOnClickListener {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val backupName = runCatching {
+                    LocalBackupManager(applicationContext).backupDatabase()
+                }.getOrNull()
+
+                withContext(Dispatchers.Main) {
+                    if (backupName == null) {
+                        Toast.makeText(this@SettingsActivity, "本地备份失败，请稍后重试", Toast.LENGTH_SHORT).show()
+                    } else {
+                        BackupPreferences(this@SettingsActivity).markLocalBackupSuccessToday()
+                        Toast.makeText(this@SettingsActivity, "本地备份成功：$backupName", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        btnManualEmailBackup.setOnClickListener {
+            val config = BackupPreferences(this).loadConfig()
+            val canDoEmailBackup = config.smtpHost.isNotBlank() &&
+                config.senderEmail.isNotBlank() &&
+                config.senderPassword.isNotBlank() &&
+                config.recipientEmail.isNotBlank()
+
+            if (!canDoEmailBackup) {
+                Toast.makeText(this, "请先完善SMTP与邮箱配置", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                val result = runCatching {
+                    EmailBackupSender(applicationContext).sendDatabaseBackup(config)
+                }
+
+                withContext(Dispatchers.Main) {
+                    result.onSuccess {
+                        BackupPreferences(this@SettingsActivity).markEmailBackupSuccessToday()
+                        Toast.makeText(this@SettingsActivity, "邮箱备份成功", Toast.LENGTH_SHORT).show()
+                    }.onFailure {
+                        Toast.makeText(this@SettingsActivity, "邮箱备份失败：${it.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
         }
 
         val backupPathText = LocalBackupManager(this).publicBackupPathDescription()
