@@ -52,7 +52,13 @@ class NoteDatabaseHelper(context: Context) :
         )
     }
 
+    private fun ensureTables(db: SQLiteDatabase) {
+        createNotesTable(db)
+        createSettingsTable(db)
+    }
+
     fun addNote(content: String) {
+        ensureTables(writableDatabase)
         val values = ContentValues().apply {
             put(COL_CONTENT, content)
             put(COL_CREATED_AT, System.currentTimeMillis())
@@ -61,6 +67,7 @@ class NoteDatabaseHelper(context: Context) :
     }
 
     fun updateNote(id: Long, content: String) {
+        ensureTables(writableDatabase)
         val values = ContentValues().apply {
             put(COL_CONTENT, content)
         }
@@ -68,10 +75,12 @@ class NoteDatabaseHelper(context: Context) :
     }
 
     fun deleteNote(id: Long) {
+        ensureTables(writableDatabase)
         writableDatabase.delete(TABLE_NOTES, "$COL_ID=?", arrayOf(id.toString()))
     }
 
     fun getNotesGroupedByDay(dayLimit: Int? = null): Map<String, List<Note>> {
+        ensureTables(readableDatabase)
         val grouped = linkedMapOf<String, MutableList<Note>>()
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
@@ -110,6 +119,7 @@ class NoteDatabaseHelper(context: Context) :
 
 
     fun getSummaryStats(): NoteSummaryStats {
+        ensureTables(readableDatabase)
         readableDatabase.rawQuery(
             """
             SELECT
@@ -133,6 +143,7 @@ class NoteDatabaseHelper(context: Context) :
     }
 
     fun getSetting(key: String): String? {
+        ensureTables(readableDatabase)
         readableDatabase.query(
             TABLE_SETTINGS,
             arrayOf(COL_SETTING_VALUE),
@@ -151,6 +162,7 @@ class NoteDatabaseHelper(context: Context) :
     }
 
     fun putSetting(key: String, value: String) {
+        ensureTables(writableDatabase)
         val values = ContentValues().apply {
             put(COL_SETTING_KEY, key)
             put(COL_SETTING_VALUE, value)
