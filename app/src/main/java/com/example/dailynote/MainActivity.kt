@@ -334,9 +334,7 @@ class MainActivity : AppCompatActivity() {
         }
         btnDelete.setOnClickListener {
             dialog.dismiss()
-            dbHelper.deleteNote(note.id)
-            loadNotes()
-            Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
+            showDeleteConfirmDialog(note)
         }
 
         dialog.show()
@@ -360,6 +358,19 @@ class MainActivity : AppCompatActivity() {
                 dbHelper.updateNote(note.id, updated)
                 loadNotes()
                 Toast.makeText(this, "已更新", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showDeleteConfirmDialog(note: Note) {
+        AlertDialog.Builder(this)
+            .setTitle("删除日记")
+            .setMessage("确定删除这条日记吗？")
+            .setPositiveButton("删除") { _, _ ->
+                dbHelper.deleteNote(note.id)
+                loadNotes()
+                Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("取消", null)
             .show()
