@@ -34,6 +34,7 @@ class NoteAdapter(
 
     fun submit(grouped: Map<String, List<Note>>, preferredExpandMode: Int = expandMode) {
         val modeChanged = preferredExpandMode != expandMode
+        val previousDays = groupedNotes.keys.toSet()
         expandMode = preferredExpandMode
         groupedNotes.clear()
         groupedNotes.putAll(grouped)
@@ -47,10 +48,14 @@ class NoteAdapter(
         }
 
         val validDays = groupedNotes.keys.toSet()
+        val addedDays = validDays - previousDays
         expandedDays.retainAll(validDays)
 
         if (modeChanged || expandedDays.isEmpty()) {
             applyExpandMode(validDays)
+        }
+        if (expandMode != BackupPreferences.EXPAND_MODE_ALL_COLLAPSED && todayText in addedDays) {
+            expandedDays.add(todayText)
         }
 
         rebuildItems()
