@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,264 +14,370 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="SMTP主机"
-            android:textStyle="bold" />
+            android:text="设置中心"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="?attr/colorOnSurface" />
 
-        <EditText
-            android:id="@+id/editSmtpHost"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="例如 smtp.163.com" />
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:cardUseCompatPadding="true">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="SMTP端口"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editSmtpPort"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="例如 465"
-            android:inputType="number" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="发件邮箱（163邮箱）"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editSenderEmail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textEmailAddress" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="发件邮箱密码/授权码"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editSenderPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textPassword" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="收件邮箱"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editRecipientEmail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textEmailAddress" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="备份密码（可选）"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/editBackupPassword"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="留空则不加密"
-            android:inputType="textPassword" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="应用配色风格"
-            android:textStyle="bold" />
-
-        <RadioGroup
-            android:id="@+id/radioGroupColorStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <RadioButton
-                android:id="@+id/radioStylePurple"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="经典紫" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <RadioButton
-                android:id="@+id/radioStyleBlue"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="清新蓝" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="邮箱与备份配置"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-            <RadioButton
-                android:id="@+id/radioStyleGreen"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="自然绿" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="SMTP主机"
+                    android:textStyle="bold" />
 
-            <RadioButton
-                android:id="@+id/radioStyleOrange"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="活力橙" />
+                <EditText
+                    android:id="@+id/editSmtpHost"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:hint="例如 smtp.163.com"
+                    android:padding="12dp" />
 
-            <RadioButton
-                android:id="@+id/radioStyleCustom"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="自定义配色（RGB）" />
-        </RadioGroup>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="SMTP端口"
+                    android:textStyle="bold" />
 
-        <LinearLayout
-            android:id="@+id/layoutCustomColor"
+                <EditText
+                    android:id="@+id/editSmtpPort"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:hint="例如 465"
+                    android:inputType="number"
+                    android:padding="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="发件邮箱（163邮箱）"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editSenderEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:inputType="textEmailAddress"
+                    android:padding="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="发件邮箱密码/授权码"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editSenderPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:inputType="textPassword"
+                    android:padding="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="收件邮箱"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editRecipientEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:inputType="textEmailAddress"
+                    android:padding="12dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="备份密码（可选）"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/editBackupPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_input"
+                    android:hint="留空则不加密"
+                    android:inputType="textPassword"
+                    android:padding="12dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="vertical"
-            android:visibility="gone">
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:cardUseCompatPadding="true">
 
-            <View
-                android:id="@+id/viewColorPreview"
-                android:layout_width="match_parent"
-                android:layout_height="36dp"
-                android:background="#6750A4" />
-
-            <TextView
-                android:id="@+id/textColorValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="RGB(103, 80, 164)" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="R" />
-
-            <SeekBar
-                android:id="@+id/seekRed"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="255" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="G" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="应用配色风格"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-            <SeekBar
-                android:id="@+id/seekGreen"
+                <RadioGroup
+                    android:id="@+id/radioGroupColorStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/radioStylePurple"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="经典紫" />
+
+                    <RadioButton
+                        android:id="@+id/radioStyleBlue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="清新蓝" />
+
+                    <RadioButton
+                        android:id="@+id/radioStyleGreen"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="自然绿" />
+
+                    <RadioButton
+                        android:id="@+id/radioStyleOrange"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="活力橙" />
+
+                    <RadioButton
+                        android:id="@+id/radioStyleCustom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="自定义配色（RGB）" />
+                </RadioGroup>
+
+                <LinearLayout
+                    android:id="@+id/layoutCustomColor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <View
+                        android:id="@+id/viewColorPreview"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:background="#6750A4" />
+
+                    <TextView
+                        android:id="@+id/textColorValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="RGB(103, 80, 164)" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="R" />
+
+                    <SeekBar
+                        android:id="@+id/seekRed"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="255" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="G" />
+
+                    <SeekBar
+                        android:id="@+id/seekGreen"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="255" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="B" />
+
+                    <SeekBar
+                        android:id="@+id/seekBlue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:max="255" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="255" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="B" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="日记分组收缩模式"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-            <SeekBar
-                android:id="@+id/seekBlue"
+                <RadioGroup
+                    android:id="@+id/radioGroupExpandMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/radioExpandLatest"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="最新一天展开" />
+
+                    <RadioButton
+                        android:id="@+id/radioExpandAll"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="全部展开" />
+
+                    <RadioButton
+                        android:id="@+id/radioCollapseAll"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="全部收缩" />
+                </RadioGroup>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:cardUseCompatPadding="true">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:max="255" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="进入应用认证"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
 
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchBiometricLock"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="开启指纹/生物识别认证" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <TextView
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="日记分组收缩模式"
-            android:textStyle="bold" />
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:cardUseCompatPadding="true">
 
-        <RadioGroup
-            android:id="@+id/radioGroupExpandMode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <RadioButton
-                android:id="@+id/radioExpandLatest"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="最新一天展开" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <RadioButton
-                android:id="@+id/radioExpandAll"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="全部展开" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSaveConfig"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="保存设置" />
 
-            <RadioButton
-                android:id="@+id/radioCollapseAll"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="全部收缩" />
-        </RadioGroup>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnImportRestore"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="导入恢复（选择备份文件）"
+                    style="?attr/materialButtonOutlinedStyle" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="进入应用认证"
-            android:textStyle="bold" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnManualLocalBackup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="手动本地备份"
+                    style="?attr/materialButtonOutlinedStyle" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchBiometricLock"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="开启指纹/生物识别认证" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnManualEmailBackup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="手动邮箱备份"
+                    style="?attr/materialButtonOutlinedStyle" />
 
-        <Button
-            android:id="@+id/btnSaveConfig"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="保存设置" />
-
-        <Button
-            android:id="@+id/btnImportRestore"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="导入恢复（选择备份文件）" />
-
-        <Button
-            android:id="@+id/btnManualLocalBackup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="手动本地备份" />
-
-        <Button
-            android:id="@+id/btnManualEmailBackup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="手动邮箱备份" />
-
-        <TextView
-            android:id="@+id/textLocalBackupPath"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="#666666"
-            android:textSize="13sp" />
-
+                <TextView
+                    android:id="@+id/textLocalBackupPath"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 </ScrollView>
