@@ -147,7 +147,7 @@ class NoteAdapter(
             val date = parseDate(dayText) ?: return dayText
             val weekText = weekFormatter.format(date)
             val lunarText = buildLunarText(date)
-            return "$dayText  $weekText  $lunarText"
+            return "$dayText\n$weekText  $lunarText"
         }
 
         private fun parseDate(dayText: String): Date? {
