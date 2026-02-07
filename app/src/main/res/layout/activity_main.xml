@@ -58,7 +58,7 @@
         android:id="@+id/bottomBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="#FFFFFFFF"
+        android:background="?attr/colorSurface"
         android:elevation="8dp"
         android:orientation="vertical"
         android:paddingTop="8dp"
@@ -70,6 +70,7 @@
             android:id="@+id/editNote"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceVariant"
             android:hint="记录今天的事情..."
             android:minHeight="56dp" />
 
