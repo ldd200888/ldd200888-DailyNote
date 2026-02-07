@@ -157,7 +157,7 @@ class NoteAdapter(
             val lunarText = buildLunarText(date)
             return SpannableStringBuilder().apply {
                 append(dayText)
-                append(" ")
+                append("     ")
                 val countStart = length
                 append("${noteCount}条")
                 setSpan(
