@@ -51,33 +51,37 @@ class NoteDatabaseHelper(context: Context) :
     }
 
     fun addNote(content: String) {
-        ensureTables(writableDatabase)
+        val db = writableDatabase
+        ensureTables(db)
         val values = ContentValues().apply {
             put(COL_CONTENT, content)
             put(COL_CREATED_AT, System.currentTimeMillis())
         }
-        writableDatabase.insert(TABLE_NOTES, null, values)
+        db.insert(TABLE_NOTES, null, values)
     }
 
     fun updateNote(id: Long, content: String) {
-        ensureTables(writableDatabase)
+        val db = writableDatabase
+        ensureTables(db)
         val values = ContentValues().apply {
             put(COL_CONTENT, content)
         }
-        writableDatabase.update(TABLE_NOTES, values, "$COL_ID=?", arrayOf(id.toString()))
+        db.update(TABLE_NOTES, values, "$COL_ID=?", arrayOf(id.toString()))
     }
 
     fun deleteNote(id: Long) {
-        ensureTables(writableDatabase)
-        writableDatabase.delete(TABLE_NOTES, "$COL_ID=?", arrayOf(id.toString()))
+        val db = writableDatabase
+        ensureTables(db)
+        db.delete(TABLE_NOTES, "$COL_ID=?", arrayOf(id.toString()))
     }
 
     fun getNotesGroupedByDay(dayLimit: Int? = null): Map<String, List<Note>> {
-        ensureTables(readableDatabase)
+        val db = readableDatabase
+        ensureTables(db)
         val grouped = linkedMapOf<String, MutableList<Note>>()
         val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-        readableDatabase.query(
+        db.query(
             TABLE_NOTES,
             arrayOf(COL_ID, COL_CONTENT, COL_CREATED_AT),
             null,
@@ -97,13 +101,15 @@ class NoteDatabaseHelper(context: Context) :
                     createdAt = cursor.getLong(createdAtIndex)
                 )
                 val day = formatter.format(Date(note.createdAt))
-                if (grouped[day] == null) {
+                val dayNotes = grouped[day]
+                if (dayNotes == null) {
                     if (dayLimit != null && grouped.size >= dayLimit) {
-                        continue
+                        break
                     }
-                    grouped[day] = mutableListOf()
+                    grouped[day] = mutableListOf(note)
+                } else {
+                    dayNotes.add(note)
                 }
-                grouped.getValue(day).add(note)
             }
         }
 
@@ -112,8 +118,9 @@ class NoteDatabaseHelper(context: Context) :
 
 
     fun getSummaryStats(): NoteSummaryStats {
-        ensureTables(readableDatabase)
-        readableDatabase.rawQuery(
+        val db = readableDatabase
+        ensureTables(db)
+        db.rawQuery(
             """
             SELECT
                 COUNT(*) AS total_count,
@@ -136,8 +143,9 @@ class NoteDatabaseHelper(context: Context) :
     }
 
     fun getSetting(key: String): String? {
-        ensureTables(readableDatabase)
-        readableDatabase.query(
+        val db = readableDatabase
+        ensureTables(db)
+        db.query(
             TABLE_SETTINGS,
             arrayOf(COL_SETTING_VALUE),
             "$COL_SETTING_KEY=?",
@@ -155,12 +163,13 @@ class NoteDatabaseHelper(context: Context) :
     }
 
     fun putSetting(key: String, value: String) {
-        ensureTables(writableDatabase)
+        val db = writableDatabase
+        ensureTables(db)
         val values = ContentValues().apply {
             put(COL_SETTING_KEY, key)
             put(COL_SETTING_VALUE, value)
         }
-        writableDatabase.insertWithOnConflict(
+        db.insertWithOnConflict(
             TABLE_SETTINGS,
             null,
             values,
