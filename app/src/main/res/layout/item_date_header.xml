@@ -39,10 +39,14 @@
 
     <ImageView
         android:id="@+id/imageExpand"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:layout_marginStart="6dp"
+        android:background="@drawable/bg_expand_button"
         android:contentDescription="展开或收起"
-        android:src="@android:drawable/arrow_down_float" />
+        android:padding="4dp"
+        android:scaleType="center"
+        android:src="@drawable/ic_chevron_down"
+        android:tint="?attr/colorOnSurfaceVariant" />
 
 </LinearLayout>
