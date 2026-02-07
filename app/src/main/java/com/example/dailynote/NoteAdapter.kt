@@ -1,6 +1,9 @@
 package com.example.dailynote
 
 import android.icu.util.ChineseCalendar
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -134,8 +137,8 @@ class NoteAdapter(
         private val imageExpand: ImageView = itemView.findViewById(R.id.imageExpand)
 
         fun bind(header: NoteListItem.Header) {
-            textDate.text = buildHeaderText(header.date)
-            textCount.text = "${header.noteCount} 条"
+            textDate.text = buildHeaderText(header.date, header.noteCount)
+            textCount.visibility = View.GONE
             imageExpand.rotation = if (header.isExpanded) 180f else 0f
 
             itemView.setOnClickListener {
@@ -148,11 +151,24 @@ class NoteAdapter(
             }
         }
 
-        private fun buildHeaderText(dayText: String): String {
+        private fun buildHeaderText(dayText: String, noteCount: Int): CharSequence {
             val date = parseDate(dayText) ?: return dayText
             val weekText = weekFormatter.format(date)
             val lunarText = buildLunarText(date)
-            return "$dayText\n$weekText  $lunarText"
+            return SpannableStringBuilder().apply {
+                append(dayText)
+                append(" ")
+                val countStart = length
+                append("${noteCount}条")
+                setSpan(
+                    RelativeSizeSpan(0.8f),
+                    countStart,
+                    length,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                append("\n")
+                append("$weekText  $lunarText")
+            }
         }
 
         private fun parseDate(dayText: String): Date? {
