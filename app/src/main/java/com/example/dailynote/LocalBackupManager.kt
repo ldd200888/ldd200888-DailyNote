@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.provider.MediaStore.Downloads
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -20,7 +21,8 @@ class LocalBackupManager(private val context: Context) {
 
         val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.zip"
         val backupPassword = BackupPreferences(context).loadBackupPassword()
-        savePublicBackup(backupName, dbFile, backupPassword)
+        val saved = savePublicBackup(backupName, dbFile, backupPassword)
+        if (!saved) return null
         trimOldPublicBackups()
         return backupName
     }
@@ -77,7 +79,7 @@ class LocalBackupManager(private val context: Context) {
         val sortOrder = "${MediaStore.MediaColumns.DATE_MODIFIED} DESC"
 
         val latestUri = context.contentResolver.query(
-            MediaStore.Files.getContentUri("external"),
+            downloadsCollectionUri(),
             projection,
             selection,
             selectionArgs,
@@ -93,7 +95,7 @@ class LocalBackupManager(private val context: Context) {
                     continue
                 }
                 val id = cursor.getLong(idIndex)
-                return@use Uri.withAppendedPath(MediaStore.Files.getContentUri("external"), id.toString())
+                return@use Uri.withAppendedPath(downloadsCollectionUri(), id.toString())
             } while (cursor.moveToNext())
 
             null
@@ -122,19 +124,30 @@ class LocalBackupManager(private val context: Context) {
         }?.maxByOrNull { it.lastModified() }
     }
 
-    private fun savePublicBackup(backupName: String, dbFile: File, backupPassword: String) {
+    private fun savePublicBackup(backupName: String, dbFile: File, backupPassword: String): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, backupName)
                 put(MediaStore.MediaColumns.MIME_TYPE, "application/zip")
                 put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOCUMENTS}/$PUBLIC_BACKUP_DIR_NAME/")
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
 
-            val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), values) ?: return
-            context.contentResolver.openOutputStream(uri)?.use { output ->
-                writeBackup(dbFile, output, backupPassword)
-            } ?: context.contentResolver.delete(uri, null, null)
-            return
+            val uri = context.contentResolver.insert(downloadsCollectionUri(), values) ?: return false
+            return runCatching {
+                context.contentResolver.openOutputStream(uri)?.use { output ->
+                    writeBackup(dbFile, output, backupPassword)
+                } ?: error("无法打开备份输出流")
+
+                val publishValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.IS_PENDING, 0)
+                }
+                context.contentResolver.update(uri, publishValues, null, null)
+                true
+            }.getOrElse {
+                context.contentResolver.delete(uri, null, null)
+                false
+            }
         }
 
         val publicBackupDir = File(
@@ -143,9 +156,12 @@ class LocalBackupManager(private val context: Context) {
         ).apply { mkdirs() }
 
         val publicBackupFile = File(publicBackupDir, backupName)
-        publicBackupFile.outputStream().use { output ->
-            writeBackup(dbFile, output, backupPassword)
-        }
+        return runCatching {
+            publicBackupFile.outputStream().use { output ->
+                writeBackup(dbFile, output, backupPassword)
+            }
+            true
+        }.getOrDefault(false)
     }
 
     private fun writeBackup(dbFile: File, output: java.io.OutputStream, backupPassword: String) {
@@ -164,7 +180,7 @@ class LocalBackupManager(private val context: Context) {
 
             val backupUris = mutableListOf<Pair<Uri, Long>>()
             context.contentResolver.query(
-                MediaStore.Files.getContentUri("external"),
+                downloadsCollectionUri(),
                 projection,
                 selection,
                 selectionArgs,
@@ -176,7 +192,7 @@ class LocalBackupManager(private val context: Context) {
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idIndex)
                     val dateModified = cursor.getLong(dateModifiedIndex)
-                    val uri = Uri.withAppendedPath(MediaStore.Files.getContentUri("external"), id.toString())
+                    val uri = Uri.withAppendedPath(downloadsCollectionUri(), id.toString())
                     backupUris += uri to dateModified
                 }
             }
@@ -205,5 +221,13 @@ class LocalBackupManager(private val context: Context) {
     companion object {
         private const val PUBLIC_BACKUP_DIR_NAME = "DailyNoteBackups"
         private const val MAX_BACKUP_FILES = 5
+    }
+
+    private fun downloadsCollectionUri(): Uri {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        } else {
+            MediaStore.Files.getContentUri("external")
+        }
     }
 }
