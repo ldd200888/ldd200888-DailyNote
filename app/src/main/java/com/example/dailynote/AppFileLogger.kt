@@ -1,8 +1,11 @@
 package com.example.dailynote
 
+import android.content.ContentValues
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import java.io.File
 import java.text.SimpleDateFormat
@@ -32,9 +35,6 @@ object AppFileLogger {
         throwable: Throwable?
     ) {
         runCatching {
-            val logFile = logFile(context)
-            rotateIfTooLarge(logFile)
-
             val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()).format(Date())
             val builder = StringBuilder()
                 .append(timestamp)
@@ -51,29 +51,82 @@ object AppFileLogger {
             }
             builder.append("\n")
 
-            logFile.appendText(builder.toString())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                writeByMediaStore(context, builder.toString())
+            } else {
+                writeByFile(context, builder.toString())
+            }
         }.onFailure {
             Log.e(TAG, "写入日志文件失败", it)
         }
     }
 
-    private fun logFile(context: Context): File {
-        val dir = resolveBackupDir(context).apply { mkdirs() }
-        return File(dir, LOG_FILE)
+    private fun writeByMediaStore(context: Context, logEntry: String) {
+        val uri = ensureLogUri(context)
+        rotateIfTooLarge(context, uri)
+        context.contentResolver.openOutputStream(uri, "wa")?.bufferedWriter()?.use { writer ->
+            writer.write(logEntry)
+        } ?: error("无法打开日志输出流")
     }
 
-    private fun resolveBackupDir(context: Context): File {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            File(
-                context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir,
-                BACKUP_DIR_NAME
-            )
-        } else {
-            File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
-                BACKUP_DIR_NAME
-            )
+    private fun ensureLogUri(context: Context): Uri {
+        val existingUri = findExistingLogUri(context)
+        if (existingUri != null) {
+            return existingUri
         }
+
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, LOG_FILE)
+            put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOCUMENTS}/$BACKUP_DIR_NAME/")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+
+        val uri = context.contentResolver.insert(filesCollectionUri(), values)
+            ?: error("创建日志文件失败")
+
+        context.contentResolver.update(
+            uri,
+            ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) },
+            null,
+            null
+        )
+        return uri
+    }
+
+    private fun findExistingLogUri(context: Context): Uri? {
+        val projection = arrayOf(MediaStore.MediaColumns._ID)
+        val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} = ? AND ${MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+        val selectionArgs = arrayOf("${Environment.DIRECTORY_DOCUMENTS}/$BACKUP_DIR_NAME/", LOG_FILE)
+
+        context.contentResolver.query(filesCollectionUri(), projection, selection, selectionArgs, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) {
+                return null
+            }
+            val idIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+            val id = cursor.getLong(idIndex)
+            return Uri.withAppendedPath(filesCollectionUri(), id.toString())
+        }
+        return null
+    }
+
+    private fun writeByFile(context: Context, logEntry: String) {
+        val logFile = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+            "$BACKUP_DIR_NAME/$LOG_FILE"
+        ).apply {
+            parentFile?.mkdirs()
+        }
+        rotateIfTooLarge(logFile)
+        logFile.appendText(logEntry)
+    }
+
+    private fun rotateIfTooLarge(context: Context, uri: Uri) {
+        val size = context.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: 0L
+        if (size < MAX_LOG_SIZE_BYTES) {
+            return
+        }
+        context.contentResolver.openOutputStream(uri, "wt")?.use { }
     }
 
     private fun rotateIfTooLarge(logFile: File) {
@@ -86,5 +139,13 @@ object AppFileLogger {
         }
         logFile.renameTo(backup)
         logFile.writeText("")
+    }
+
+    private fun filesCollectionUri(): Uri {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        } else {
+            MediaStore.Files.getContentUri("external")
+        }
     }
 }
