@@ -132,13 +132,16 @@ class SettingsActivity : AppCompatActivity() {
                     result.onSuccess { backupName ->
                         if (backupName == null) {
                             prefs.markLocalBackupFailure("未找到数据库文件")
+                            AppFileLogger.error(applicationContext, "manual_local_backup", "手动本地备份失败：未找到数据库文件")
                             Toast.makeText(this@SettingsActivity, "本地备份失败，请稍后重试", Toast.LENGTH_SHORT).show()
                         } else {
                             prefs.markLocalBackupSuccessToday()
+                            AppFileLogger.info(applicationContext, "manual_local_backup", "手动本地备份成功，file=$backupName")
                             Toast.makeText(this@SettingsActivity, "本地备份成功：$backupName", Toast.LENGTH_SHORT).show()
                         }
                     }.onFailure {
                         prefs.markLocalBackupFailure(it.message ?: "未知原因")
+                        AppFileLogger.error(applicationContext, "manual_local_backup", "手动本地备份失败", it)
                         Toast.makeText(this@SettingsActivity, "本地备份失败，请稍后重试", Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -166,9 +169,11 @@ class SettingsActivity : AppCompatActivity() {
                     val prefs = BackupPreferences(this@SettingsActivity)
                     result.onSuccess {
                         prefs.markEmailBackupSuccessToday()
+                        AppFileLogger.info(applicationContext, "manual_email_backup", "手动邮箱备份成功")
                         Toast.makeText(this@SettingsActivity, "邮箱备份成功", Toast.LENGTH_SHORT).show()
                     }.onFailure {
                         prefs.markEmailBackupFailure(it.message ?: "未知原因")
+                        AppFileLogger.error(applicationContext, "manual_email_backup", "手动邮箱备份失败", it)
                         Toast.makeText(this@SettingsActivity, "邮箱备份失败：${it.message}", Toast.LENGTH_LONG).show()
                     }
                 }
@@ -244,8 +249,10 @@ class SettingsActivity : AppCompatActivity() {
 
             BackupZipUtils.extractEncryptedZip(tempFile, dbFile, backupPassword)
         }.onSuccess {
+            AppFileLogger.info(this, "manual_restore", "手动导入恢复成功")
             Toast.makeText(this, "导入恢复成功，请重启应用查看最新内容", Toast.LENGTH_LONG).show()
         }.onFailure {
+            AppFileLogger.error(this, "manual_restore", "手动导入恢复失败", it)
             Toast.makeText(this, "导入恢复失败：${it.message}", Toast.LENGTH_LONG).show()
         }
 

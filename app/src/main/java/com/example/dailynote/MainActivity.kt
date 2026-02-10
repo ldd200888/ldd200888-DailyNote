@@ -1,7 +1,6 @@
 package com.example.dailynote
 
 import android.content.Intent
-import android.util.Log
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -198,7 +197,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "未找到可恢复的本地备份", Toast.LENGTH_SHORT).show()
             }
         }.onFailure { throwable ->
-            Log.e(TAG, "首次启动自动恢复失败", throwable)
+            AppFileLogger.error(this, "first_launch_restore", "首次启动自动恢复失败", throwable)
             Toast.makeText(this, "自动恢复失败，请检查备份文件", Toast.LENGTH_SHORT).show()
         }
     }
@@ -226,11 +225,13 @@ class MainActivity : AppCompatActivity() {
                         LocalBackupManager(applicationContext).backupDatabase() ?: error("数据库文件不存在")
                     }.onSuccess {
                         prefs.markLocalBackupSuccessToday()
+                        AppFileLogger.info(applicationContext, "auto_local_backup", "自动本地备份成功")
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, "今日本地备份成功", Toast.LENGTH_SHORT).show()
                         }
                     }.onFailure {
                         prefs.markLocalBackupFailure(it.message ?: "未知原因")
+                        AppFileLogger.error(applicationContext, "auto_local_backup", "自动本地备份失败", it)
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, "今日本地备份失败", Toast.LENGTH_SHORT).show()
                         }
@@ -244,11 +245,13 @@ class MainActivity : AppCompatActivity() {
                         EmailBackupSender(applicationContext).sendDatabaseBackup(config)
                     }.onSuccess {
                         prefs.markEmailBackupSuccessToday()
+                        AppFileLogger.info(applicationContext, "auto_email_backup", "自动邮箱备份成功")
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, "今日邮箱备份成功", Toast.LENGTH_SHORT).show()
                         }
                     }.onFailure {
                         prefs.markEmailBackupFailure(it.message ?: "未知原因")
+                        AppFileLogger.error(applicationContext, "auto_email_backup", "自动邮箱备份失败", it)
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, "今日邮箱备份失败", Toast.LENGTH_SHORT).show()
                         }
@@ -394,6 +397,5 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val DEFAULT_VISIBLE_DAYS = 5
-        private const val TAG = "MainActivity"
     }
 }
