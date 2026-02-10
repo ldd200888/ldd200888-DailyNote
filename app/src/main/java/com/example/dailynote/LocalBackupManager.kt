@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import android.provider.MediaStore.Downloads
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -79,7 +78,7 @@ class LocalBackupManager(private val context: Context) {
         val sortOrder = "${MediaStore.MediaColumns.DATE_MODIFIED} DESC"
 
         val latestUri = context.contentResolver.query(
-            downloadsCollectionUri(),
+            filesCollectionUri(),
             projection,
             selection,
             selectionArgs,
@@ -95,7 +94,7 @@ class LocalBackupManager(private val context: Context) {
                     continue
                 }
                 val id = cursor.getLong(idIndex)
-                return@use Uri.withAppendedPath(downloadsCollectionUri(), id.toString())
+                return@use Uri.withAppendedPath(filesCollectionUri(), id.toString())
             } while (cursor.moveToNext())
 
             null
@@ -133,7 +132,7 @@ class LocalBackupManager(private val context: Context) {
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
 
-            val uri = context.contentResolver.insert(downloadsCollectionUri(), values) ?: return false
+            val uri = context.contentResolver.insert(filesCollectionUri(), values) ?: return false
             return runCatching {
                 context.contentResolver.openOutputStream(uri)?.use { output ->
                     writeBackup(dbFile, output, backupPassword)
@@ -180,7 +179,7 @@ class LocalBackupManager(private val context: Context) {
 
             val backupUris = mutableListOf<Pair<Uri, Long>>()
             context.contentResolver.query(
-                downloadsCollectionUri(),
+                filesCollectionUri(),
                 projection,
                 selection,
                 selectionArgs,
@@ -192,7 +191,7 @@ class LocalBackupManager(private val context: Context) {
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idIndex)
                     val dateModified = cursor.getLong(dateModifiedIndex)
-                    val uri = Uri.withAppendedPath(downloadsCollectionUri(), id.toString())
+                    val uri = Uri.withAppendedPath(filesCollectionUri(), id.toString())
                     backupUris += uri to dateModified
                 }
             }
@@ -223,9 +222,9 @@ class LocalBackupManager(private val context: Context) {
         private const val MAX_BACKUP_FILES = 5
     }
 
-    private fun downloadsCollectionUri(): Uri {
+    private fun filesCollectionUri(): Uri {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
         } else {
             MediaStore.Files.getContentUri("external")
         }
