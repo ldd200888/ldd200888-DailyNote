@@ -16,13 +16,20 @@ class LocalBackupManager(private val context: Context) {
 
     fun backupDatabase(): String? {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
-        if (!dbFile.exists()) return null
+        if (!dbFile.exists()) {
+            AppFileLogger.error(context, "local_backup", "本地备份失败：数据库文件不存在")
+            return null
+        }
 
         val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.zip"
         val backupPassword = BackupPreferences(context).loadBackupPassword()
         val saved = savePublicBackup(backupName, dbFile, backupPassword)
-        if (!saved) return null
+        if (!saved) {
+            AppFileLogger.error(context, "local_backup", "本地备份失败：保存备份文件失败，file=$backupName")
+            return null
+        }
         trimOldPublicBackups()
+        AppFileLogger.info(context, "local_backup", "本地备份成功，file=$backupName")
         return backupName
     }
 
@@ -33,14 +40,19 @@ class LocalBackupManager(private val context: Context) {
 
     fun restoreLatestBackupIfExists(): Boolean {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
-        val latestBackup = findLatestBackup() ?: return false
+        val latestBackup = findLatestBackup() ?: run {
+            AppFileLogger.info(context, "local_restore", "未找到可用备份，跳过恢复")
+            return false
+        }
 
         val backupPassword = BackupPreferences(context).loadBackupPassword()
         return try {
             dbFile.parentFile?.mkdirs()
             BackupZipUtils.extractEncryptedZip(latestBackup, dbFile, backupPassword)
+            AppFileLogger.info(context, "local_restore", "自动恢复成功，backup=${latestBackup.name}")
             true
         } catch (e: Exception) {
+            AppFileLogger.error(context, "local_restore", "自动恢复失败，backup=${latestBackup.name}", e)
             false
         } finally {
             if (latestBackup.parentFile == context.cacheDir && latestBackup.name.startsWith("daily_note_restore_")) {

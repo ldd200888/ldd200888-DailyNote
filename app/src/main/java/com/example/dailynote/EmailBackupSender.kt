@@ -1,7 +1,6 @@
 package com.example.dailynote
 
 import android.content.Context
-import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -23,7 +22,10 @@ class EmailBackupSender(private val context: Context) {
 
     fun sendDatabaseBackup(config: BackupConfig) {
         val dbFile = context.getDatabasePath(NoteDatabaseHelper.DATABASE_NAME)
-        if (!dbFile.exists()) return
+        if (!dbFile.exists()) {
+            AppFileLogger.error(context, "email_backup", "邮箱备份失败：数据库文件不存在")
+            return
+        }
 
         val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.zip"
         val backupPassword = BackupPreferences(context).loadBackupPassword()
@@ -68,9 +70,10 @@ class EmailBackupSender(private val context: Context) {
 
         try {
             Transport.send(message)
+            AppFileLogger.info(context, "email_backup", "邮箱备份发送成功，recipient=${config.recipientEmail}")
         } catch (e: Exception) {
             val detail = formatSmtpError(e)
-            Log.e(TAG, detail, e)
+            AppFileLogger.error(context, "email_backup", detail, e)
             throw RuntimeException(detail, e)
         }
     }
@@ -128,7 +131,4 @@ class EmailBackupSender(private val context: Context) {
         }
     }
 
-    companion object {
-        private const val TAG = "EmailBackupSender"
-    }
 }

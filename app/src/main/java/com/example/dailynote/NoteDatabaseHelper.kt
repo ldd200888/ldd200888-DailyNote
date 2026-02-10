@@ -8,7 +8,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class NoteDatabaseHelper(context: Context) :
+class NoteDatabaseHelper(private val context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -51,28 +51,46 @@ class NoteDatabaseHelper(context: Context) :
     }
 
     fun addNote(content: String) {
-        val db = writableDatabase
-        ensureTables(db)
-        val values = ContentValues().apply {
-            put(COL_CONTENT, content)
-            put(COL_CREATED_AT, System.currentTimeMillis())
+        runCatching {
+            val db = writableDatabase
+            ensureTables(db)
+            val values = ContentValues().apply {
+                put(COL_CONTENT, content)
+                put(COL_CREATED_AT, System.currentTimeMillis())
+            }
+            db.insert(TABLE_NOTES, null, values)
+            AppFileLogger.info(context, "note_add", "新增记事成功")
+        }.onFailure {
+            AppFileLogger.error(context, "note_add", "新增记事失败", it)
+            throw it
         }
-        db.insert(TABLE_NOTES, null, values)
     }
 
     fun updateNote(id: Long, content: String) {
-        val db = writableDatabase
-        ensureTables(db)
-        val values = ContentValues().apply {
-            put(COL_CONTENT, content)
+        runCatching {
+            val db = writableDatabase
+            ensureTables(db)
+            val values = ContentValues().apply {
+                put(COL_CONTENT, content)
+            }
+            db.update(TABLE_NOTES, values, "$COL_ID=?", arrayOf(id.toString()))
+            AppFileLogger.info(context, "note_update", "更新记事成功，id=$id")
+        }.onFailure {
+            AppFileLogger.error(context, "note_update", "更新记事失败，id=$id", it)
+            throw it
         }
-        db.update(TABLE_NOTES, values, "$COL_ID=?", arrayOf(id.toString()))
     }
 
     fun deleteNote(id: Long) {
-        val db = writableDatabase
-        ensureTables(db)
-        db.delete(TABLE_NOTES, "$COL_ID=?", arrayOf(id.toString()))
+        runCatching {
+            val db = writableDatabase
+            ensureTables(db)
+            db.delete(TABLE_NOTES, "$COL_ID=?", arrayOf(id.toString()))
+            AppFileLogger.info(context, "note_delete", "删除记事成功，id=$id")
+        }.onFailure {
+            AppFileLogger.error(context, "note_delete", "删除记事失败，id=$id", it)
+            throw it
+        }
     }
 
     fun getNotesGroupedByDay(dayLimit: Int? = null): Map<String, List<Note>> {
