@@ -8,6 +8,8 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import java.io.File
+import java.io.FileOutputStream
+import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -54,7 +56,7 @@ object AppFileLogger {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 writeByMediaStore(context, builder.toString())
             } else {
-                writeByFile(context, builder.toString())
+                writeByFile(builder.toString())
             }
         }.onFailure {
             Log.e(TAG, "写入日志文件失败", it)
@@ -64,8 +66,13 @@ object AppFileLogger {
     private fun writeByMediaStore(context: Context, logEntry: String) {
         val uri = ensureLogUri(context)
         rotateIfTooLarge(context, uri)
-        context.contentResolver.openOutputStream(uri, "wa")?.bufferedWriter()?.use { writer ->
-            writer.write(logEntry)
+        val bytes = logEntry.toByteArray(Charsets.UTF_8)
+        context.contentResolver.openFileDescriptor(uri, "rw")?.use { descriptor ->
+            FileOutputStream(descriptor.fileDescriptor).channel.use { channel ->
+                channel.position(descriptor.statSize.coerceAtLeast(0L))
+                channel.write(ByteBuffer.wrap(bytes))
+                channel.force(true)
+            }
         } ?: error("无法打开日志输出流")
     }
 
@@ -110,15 +117,19 @@ object AppFileLogger {
         return null
     }
 
-    private fun writeByFile(context: Context, logEntry: String) {
-        val logFile = File(
+    private fun writeByFile(logEntry: String) {
+        val logFile = resolveLegacyLogFile()
+        rotateIfTooLarge(logFile)
+        logFile.appendText(logEntry)
+    }
+
+    private fun resolveLegacyLogFile(): File {
+        return File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
             "$BACKUP_DIR_NAME/$LOG_FILE"
         ).apply {
             parentFile?.mkdirs()
         }
-        rotateIfTooLarge(logFile)
-        logFile.appendText(logEntry)
     }
 
     private fun rotateIfTooLarge(context: Context, uri: Uri) {
@@ -126,7 +137,12 @@ object AppFileLogger {
         if (size < MAX_LOG_SIZE_BYTES) {
             return
         }
-        context.contentResolver.openOutputStream(uri, "wt")?.use { }
+        context.contentResolver.openFileDescriptor(uri, "rw")?.use { descriptor ->
+            FileOutputStream(descriptor.fileDescriptor).channel.use { channel ->
+                channel.truncate(0)
+                channel.force(true)
+            }
+        }
     }
 
     private fun rotateIfTooLarge(logFile: File) {
