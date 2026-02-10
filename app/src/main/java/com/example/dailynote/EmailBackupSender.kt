@@ -2,14 +2,14 @@ package com.example.dailynote
 
 import android.content.Context
 import android.util.Log
-import java.io.File
+import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.Properties
 import kotlin.random.Random
 import javax.activation.DataHandler
-import javax.activation.FileDataSource
+import javax.mail.util.ByteArrayDataSource
 import javax.mail.Message
 import javax.mail.PasswordAuthentication
 import javax.mail.Session
@@ -26,10 +26,10 @@ class EmailBackupSender(private val context: Context) {
         if (!dbFile.exists()) return
 
         val backupName = "${dbFile.nameWithoutExtension}_${timestamp()}_${randomSuffix()}.zip"
-        val backupFile = File(context.cacheDir, backupName)
         val backupPassword = BackupPreferences(context).loadBackupPassword()
-        backupFile.outputStream().use { output ->
+        val backupZipBytes = ByteArrayOutputStream().use { output ->
             BackupZipUtils.writeEncryptedZip(dbFile, output, backupPassword)
+            output.toByteArray()
         }
 
         val useSsl = config.smtpPort == 465
@@ -63,7 +63,7 @@ class EmailBackupSender(private val context: Context) {
             setRecipients(Message.RecipientType.TO, InternetAddress.parse(config.recipientEmail))
             val dateText = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
             subject = "每日记事 SQLite 备份 - $dateText"
-            setContent(buildContent(backupFile), "multipart/mixed")
+            setContent(buildContent(backupName, backupZipBytes), "multipart/mixed")
         }
 
         try {
@@ -72,8 +72,6 @@ class EmailBackupSender(private val context: Context) {
             val detail = formatSmtpError(e)
             Log.e(TAG, detail, e)
             throw RuntimeException(detail, e)
-        } finally {
-            backupFile.delete()
         }
     }
 
@@ -85,14 +83,14 @@ class EmailBackupSender(private val context: Context) {
         return String.format(Locale.US, "%04d", Random.nextInt(10_000))
     }
 
-    private fun buildContent(dbFile: File): MimeMultipart {
+    private fun buildContent(backupName: String, backupZipBytes: ByteArray): MimeMultipart {
         val textPart = MimeBodyPart().apply {
             setText("这是每日记事应用自动备份的数据库压缩包（ZIP）。")
         }
 
         val attachmentPart = MimeBodyPart().apply {
-            dataHandler = DataHandler(FileDataSource(dbFile))
-            fileName = dbFile.name
+            dataHandler = DataHandler(ByteArrayDataSource(backupZipBytes, "application/zip"))
+            fileName = backupName
         }
 
         return MimeMultipart().apply {
