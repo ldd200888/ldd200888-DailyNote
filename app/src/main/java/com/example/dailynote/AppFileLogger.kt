@@ -1,6 +1,8 @@
 package com.example.dailynote
 
 import android.content.Context
+import android.os.Build
+import android.os.Environment
 import android.util.Log
 import java.io.File
 import java.text.SimpleDateFormat
@@ -8,10 +10,10 @@ import java.util.Date
 import java.util.Locale
 
 object AppFileLogger {
-    private const val LOG_DIR = "logs"
     private const val LOG_FILE = "daily_note.log"
     private const val TAG = "AppFileLogger"
     private const val MAX_LOG_SIZE_BYTES = 1024 * 1024 // 1MB
+    private const val BACKUP_DIR_NAME = "DailyNoteBackups"
 
     fun info(context: Context, event: String, message: String) {
         write(context, "INFO", event, message, null)
@@ -56,8 +58,22 @@ object AppFileLogger {
     }
 
     private fun logFile(context: Context): File {
-        val dir = File(context.filesDir, LOG_DIR).apply { mkdirs() }
+        val dir = resolveBackupDir(context).apply { mkdirs() }
         return File(dir, LOG_FILE)
+    }
+
+    private fun resolveBackupDir(context: Context): File {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            File(
+                context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir,
+                BACKUP_DIR_NAME
+            )
+        } else {
+            File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+                BACKUP_DIR_NAME
+            )
+        }
     }
 
     private fun rotateIfTooLarge(logFile: File) {
